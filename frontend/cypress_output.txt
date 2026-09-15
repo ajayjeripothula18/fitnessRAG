@@ -1,0 +1,85 @@
+
+> frontend@0.0.0 test:e2e
+> cypress run
+
+
+================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.21.1                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v26.8.1 (/home/ajay-hypermiles/.hermes/node/bin/node)                          │
+  │ Specs:          1 found (chat.cy.ts)                                                           │
+  │ Searched:       cypress/e2e/**/*.cy.{js,jsx,ts,tsx}                                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  chat.cy.ts                                                                      (1 of 1)
+
+
+  Chat Interface
+    1) should pass accessibility tests
+    2) should allow sending a message and show AI response with citations
+
+
+  0 passing (12s)
+  2 failing
+
+  1) Chat Interface
+       should pass accessibility tests:
+     AssertionError: 4 accessibility violations were detected: expected 4 to equal 0
+      at Context.eval (webpack://frontend/./node_modules/cypress-axe/dist/index.js:102:0)
+      at getRet (http://localhost:5173/__cypress/runner/cypress_runner.js:121394:20)
+      at tryCatcher (http://localhost:5173/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (http://localhost:5173/__cypress/runner/cypress_runner.js:4288:29)
+      at Context.thenFn (http://localhost:5173/__cypress/runner/cypress_runner.js:121405:66)
+      at Context.then (http://localhost:5173/__cypress/runner/cypress_runner.js:121656:21)
+      at wrapped (http://localhost:5173/__cypress/runner/cypress_runner.js:146597:19)
+
+  2) Chat Interface
+       should allow sending a message and show AI response with citations:
+     AssertionError: Timed out retrying after 4000ms: Expected to find content: 'Here is a mock response from the AI coach' but never did.
+      at Context.eval (webpack://frontend/./cypress/e2e/chat.cy.ts:26:61)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        2                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      2                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  2                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     12 seconds                                                                       │
+  │ Spec Ran:     chat.cy.ts                                                                       │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /home/ajay-hypermiles/Documents/AJ/projects/fitnessRAG/frontend/cypress/screensh     (1280x720)
+     ots/chat.cy.ts/Chat Interface -- should pass accessibility tests (failed).png                  
+  -  /home/ajay-hypermiles/Documents/AJ/projects/fitnessRAG/frontend/cypress/screensh     (1280x720)
+     ots/chat.cy.ts/Chat Interface -- should allow sending a message and show AI resp               
+     onse with citations (failed).png                                                               
+
+
+================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✖  chat.cy.ts                               00:12        2        -        2        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✖  1 of 1 failed (100%)                     00:12        2        -        2        -        -  
+

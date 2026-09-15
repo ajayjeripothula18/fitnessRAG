@@ -1,0 +1,245 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>AI Fitness Coach Chat</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&amp;family=Inter:wght@400;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-variant": "#2d3449",
+                      "surface-container-low": "#131b2e",
+                      "tertiary-fixed": "#7df4ff",
+                      "surface-dim": "#0b1326",
+                      "outline-variant": "#4c4354",
+                      "error": "#ffb4ab",
+                      "on-surface-variant": "#cfc2d7",
+                      "on-primary-fixed": "#2c0051",
+                      "secondary": "#d7ffc5",
+                      "surface": "#0b1326",
+                      "on-error": "#690005",
+                      "on-error-container": "#ffdad6",
+                      "inverse-on-surface": "#283044",
+                      "surface-container-lowest": "#060e20",
+                      "tertiary-container": "#006f76",
+                      "primary": "#dcb8ff",
+                      "surface-container": "#171f33",
+                      "on-primary-fixed-variant": "#6700b5",
+                      "surface-container-highest": "#2d3449",
+                      "on-secondary-fixed": "#022100",
+                      "on-primary": "#480081",
+                      "tertiary": "#00dbe9",
+                      "on-tertiary": "#00363a",
+                      "inverse-surface": "#dae2fd",
+                      "surface-bright": "#31394d",
+                      "on-secondary-fixed-variant": "#095300",
+                      "background": "#0b1326",
+                      "primary-fixed": "#efdbff",
+                      "error-container": "#93000a",
+                      "primary-container": "#8a2be2",
+                      "on-secondary-container": "#0f6d00",
+                      "on-tertiary-fixed-variant": "#004f54",
+                      "secondary-container": "#2ff801",
+                      "on-tertiary-fixed": "#002022",
+                      "secondary-fixed": "#79ff5b",
+                      "on-secondary": "#053900",
+                      "on-surface": "#dae2fd",
+                      "on-tertiary-container": "#75f4ff",
+                      "on-background": "#dae2fd",
+                      "surface-container-high": "#222a3d",
+                      "tertiary-fixed-dim": "#00dbe9",
+                      "surface-tint": "#dcb8ff",
+                      "outline": "#988ca0",
+                      "secondary-fixed-dim": "#2ae500",
+                      "primary-fixed-dim": "#dcb8ff",
+                      "inverse-primary": "#8422dc",
+                      "on-primary-container": "#eed9ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "section-gap": "48px",
+                      "card-padding": "20px",
+                      "container-margin": "24px",
+                      "unit": "8px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "headline-md": ["Outfit"],
+                      "stats-numeric": ["Outfit"],
+                      "display-lg-mobile": ["Outfit"],
+                      "body-lg": ["Inter"],
+                      "body-md": ["Inter"],
+                      "display-lg": ["Outfit"],
+                      "label-caps": ["Inter"],
+                      "headline-sm": ["Outfit"]
+              },
+              "fontSize": {
+                      "headline-md": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                      "stats-numeric": ["40px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                      "display-lg-mobile": ["36px", {"lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                      "headline-sm": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        .glass-panel {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .ai-bubble-glow {
+            box-shadow: 0 0 40px rgba(138, 43, 226, 0.15);
+        }
+        .live-indicator {
+            animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(57, 255, 20, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(57, 255, 20, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(57, 255, 20, 0); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- Sticky TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-xl border-b border-white/20 shadow-[0_40px_40px_-15px_rgba(138,43,226,0.15)] flex items-center justify-between px-container-margin h-16 max-w-md mx-auto left-1/2 -translate-x-1/2 md:max-w-7xl md:left-0 md:translate-x-0">
+<div class="flex items-center gap-4">
+<button class="text-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<div class="flex items-center gap-2">
+<h1 class="font-headline-sm text-headline-sm text-primary m-0">AI Coach</h1>
+<div class="flex items-center gap-1 bg-surface-container px-2 py-0.5 rounded-full border border-secondary/30">
+<div class="w-2 h-2 rounded-full bg-secondary-container live-indicator"></div>
+<span class="font-label-caps text-[10px] text-secondary">Live</span>
+</div>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-variant border border-white/10 flex items-center justify-center overflow-hidden hover:opacity-80 transition-opacity active:scale-95">
+  <span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+</button>
+</header>
+<!-- Main Chat Canvas -->
+<main class="flex-1 flex flex-col pt-24 pb-40 px-container-margin gap-section-gap max-w-md mx-auto w-full">
+<!-- Chat Area -->
+<div class="flex flex-col gap-6">
+<!-- Time Divider -->
+<div class="flex justify-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant bg-surface-container px-3 py-1 rounded-full text-[10px]">Today, 08:30 AM</span>
+</div>
+<!-- AI Message 1 -->
+<div class="flex flex-col items-start max-w-[85%] self-start animate-[fadeIn_0.3s_ease-out]">
+<div class="flex items-end gap-2 mb-1">
+<div class="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center border border-primary/30">
+<span class="material-symbols-outlined text-[14px] text-on-primary-container" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</div>
+<span class="font-label-caps text-[10px] text-on-surface-variant">AI Coach</span>
+</div>
+<div class="bg-surface-container glass-panel p-4 rounded-2xl rounded-tl-sm border-l-2 border-l-primary ai-bubble-glow relative overflow-hidden group border-primary/30">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-50"></div>
+<p class="font-body-md text-body-md text-on-surface relative z-10">Good morning! Your resting heart rate is optimal today at 52 BPM. Ready to tackle that upper body hypertrophy session?</p>
+</div>
+</div>
+<!-- User Message 1 -->
+<div class="flex flex-col items-end max-w-[85%] self-end animate-[fadeIn_0.4s_ease-out]">
+<div class="p-4 rounded-2xl rounded-tr-sm bg-surface-container-highest">
+<p class="font-body-md text-body-md text-on-surface">Yeah, feeling good. But I'm plateauing on bench press. Any tips to break through?</p>
+</div>
+</div>
+<!-- AI Message 2 (with citation) -->
+<div class="flex flex-col items-start max-w-[90%] self-start animate-[fadeIn_0.5s_ease-out]">
+<div class="flex items-end gap-2 mb-1">
+<div class="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center border border-primary/30">
+<span class="material-symbols-outlined text-[14px] text-on-primary-container" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</div>
+<span class="font-label-caps text-[10px] text-on-surface-variant">AI Coach</span>
+</div>
+<div class="bg-surface-container glass-panel p-4 rounded-2xl rounded-tl-sm border-l-2 border-l-primary ai-bubble-glow relative overflow-hidden border-primary/30">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-50"></div>
+<p class="font-body-md text-body-md text-on-surface relative z-10 mb-4">To overcome a bench press plateau, consider incorporating paused reps or adjusting your grip width. Recent studies suggest that varying the mechanical tension curve can significantly stimulate new muscle fiber recruitment.</p>
+<!-- Citation Badge -->
+<div class="inline-flex items-center gap-1 bg-surface-variant/80 border border-white/10 rounded-full px-3 py-1.5 relative z-10 cursor-pointer hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[14px] text-tertiary-fixed" style="font-variation-settings: 'FILL' 0;">science</span>
+<span class="font-label-caps text-[10px] text-on-surface">[1] PubMed: Muscle Hypertrophy</span>
+</div>
+</div>
+</div>
+<!-- Typing Indicator (Simulated) -->
+<div class="flex flex-col items-start max-w-[85%] self-start mt-2">
+<div class="bg-surface-container glass-panel px-4 py-3 rounded-2xl rounded-tl-sm flex gap-1 items-center">
+<div class="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"></div>
+<div class="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+<div class="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+</div>
+</div>
+</div>
+</main>
+<!-- Sticky Input Area -->
+<div class="fixed bottom-24 left-0 right-0 w-full z-40 max-w-md mx-auto px-container-margin">
+<div class="bg-surface-container/90 glass-panel rounded-full p-2 flex items-center gap-2 shadow-lg">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors flex-shrink-0 rounded-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">mic</span>
+</button>
+<input class="flex-1 bg-transparent border-none text-on-surface focus:ring-0 placeholder:text-on-surface-variant/50 font-body-md py-2" placeholder="Ask your fitness coach..." type="text">
+<button class="bg-primary-container text-on-primary-container p-2 rounded-full hover:opacity-90 active:scale-95 transition-all flex-shrink-0 shadow-[0_0_15px_rgba(138,43,226,0.4)]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+<!-- BottomNavBar (Shared Component Translation) -->
+<nav class="bg-surface-container/60 dark:bg-surface-container/60 backdrop-blur-2xl text-primary font-label-caps text-label-caps font-display-lg-mobile text-display-lg-mobile text-primary fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full border border-white/20 shadow-2xl fixed bottom-6 left-0 right-0 z-50 flex justify-around items-center px-6 py-3 max-w-md mx-auto md:hidden">
+<!-- Active Tab: Chat -->
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="flex items-center justify-center bg-primary-container text-on-primary-container rounded-full w-12 h-12 shadow-[0_0_15px_rgba(138,43,226,0.4)] active:scale-90 transition-transform hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+</div>
+</a>
+<!-- Inactive Tab: Dashboard -->
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:bg-surface-variant/40 rounded-full transition-all active:scale-90 transition-transform hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+</div>
+</a>
+<!-- Inactive Tab: Profile -->
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:bg-surface-variant/40 rounded-full transition-all active:scale-90 transition-transform hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">person</span>
+</div>
+</a>
+</nav>
+<script>
+        // Simple ambient subtle floating effect for AI bubbles
+        document.addEventListener('DOMContentLoaded', () => {
+            const aiBubbles = document.querySelectorAll('.ai-bubble-glow');
+            aiBubbles.forEach((bubble, index) => {
+                bubble.animate([
+                    { transform: 'translateY(0px)' },
+                    { transform: 'translateY(-2px)' },
+                    { transform: 'translateY(0px)' }
+                ], {
+                    duration: 4000 + (index * 500),
+                    iterations: Infinity,
+                    easing: 'ease-in-out'
+                });
+            });
+        });
+    </script>
+
+
+</body></html>

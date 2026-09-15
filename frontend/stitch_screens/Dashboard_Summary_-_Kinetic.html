@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FitnessRAG Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&amp;family=Inter:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#2d3449",
+                        "surface-container-low": "#131b2e",
+                        "tertiary-fixed": "#7df4ff",
+                        "surface-dim": "#0b1326",
+                        "outline-variant": "#4c4354",
+                        "error": "#ffb4ab",
+                        "on-surface-variant": "#cfc2d7",
+                        "on-primary-fixed": "#2c0051",
+                        "secondary": "#d7ffc5",
+                        "surface": "#0b1326",
+                        "on-error": "#690005",
+                        "on-error-container": "#ffdad6",
+                        "inverse-on-surface": "#283044",
+                        "surface-container-lowest": "#060e20",
+                        "tertiary-container": "#006f76",
+                        "primary": "#dcb8ff",
+                        "surface-container": "#171f33",
+                        "on-primary-fixed-variant": "#6700b5",
+                        "surface-container-highest": "#2d3449",
+                        "on-secondary-fixed": "#022100",
+                        "on-primary": "#480081",
+                        "tertiary": "#00dbe9",
+                        "on-tertiary": "#00363a",
+                        "inverse-surface": "#dae2fd",
+                        "surface-bright": "#31394d",
+                        "on-secondary-fixed-variant": "#095300",
+                        "background": "#0b1326",
+                        "primary-fixed": "#efdbff",
+                        "error-container": "#93000a",
+                        "primary-container": "#8a2be2",
+                        "on-secondary-container": "#0f6d00",
+                        "on-tertiary-fixed-variant": "#004f54",
+                        "secondary-container": "#2ff801",
+                        "on-tertiary-fixed": "#002022",
+                        "secondary-fixed": "#79ff5b",
+                        "on-secondary": "#053900",
+                        "on-surface": "#dae2fd",
+                        "on-tertiary-container": "#75f4ff",
+                        "on-background": "#dae2fd",
+                        "surface-container-high": "#222a3d",
+                        "tertiary-fixed-dim": "#00dbe9",
+                        "surface-tint": "#dcb8ff",
+                        "outline": "#988ca0",
+                        "secondary-fixed-dim": "#2ae500",
+                        "primary-fixed-dim": "#dcb8ff",
+                        "inverse-primary": "#8422dc",
+                        "on-primary-container": "#eed9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-gap": "48px",
+                        "card-padding": "20px",
+                        "container-margin": "24px",
+                        "unit": "8px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Outfit"],
+                        "stats-numeric": ["Outfit"],
+                        "display-lg-mobile": ["Outfit"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Outfit"],
+                        "label-caps": ["Inter"],
+                        "headline-sm": ["Outfit"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "stats-numeric": ["40px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "display-lg-mobile": ["36px", { "lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+                    },
+                    "animation": {
+                        'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
+                        'breathe': 'breathe 2s ease-in-out infinite',
+                    },
+                    "keyframes": {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        breathe: {
+                            '0%, 100%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.05)' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #0b1326; /* surface */
+            color: #dae2fd; /* on-surface */
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .glass-panel {
+            background: rgba(23, 31, 51, 0.4); /* surface-container with opacity */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid transparent;
+            border-image: linear-gradient(to bottom right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05)) 1;
+            border-radius: 0.75rem; /* xl */
+        }
+        
+        .glow-accent {
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.2);
+        }
+        
+        /* Custom Neon Green for requested overrides */
+        .text-neon-green {
+            color: #39FF14 !important;
+        }
+        .stroke-neon-green {
+            stroke: #39FF14 !important;
+        }
+        .bg-neon-green {
+            background-color: #39FF14 !important;
+        }
+        
+        .stagger-1 { animation-delay: 100ms; opacity: 0; }
+        .stagger-2 { animation-delay: 200ms; opacity: 0; }
+        .stagger-3 { animation-delay: 300ms; opacity: 0; }
+    </style>
+</head>
+<body class="min-h-screen pb-32">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-xl border-b border-white/20 shadow-[0_40px_40px_-15px_rgba(138,43,226,0.15)] flex items-center justify-between px-container-margin h-16 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-variant overflow-hidden border border-outline/30">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="A stylized, high-contrast avatar portrait of an athlete in profile, illuminated by subtle neon purple and deep slate lighting. The image sits within a dark, premium fitness tech aesthetic with glassmorphic depth, conveying focus and intensity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEdb4BoTUKgYoPx8bGRF6U2kjgPjY8NdZVQLgxVKW0_KnHtBUEFfZ-oxv6u75Cu7cyifRGm8XNMwhjZPjSPTon06MzG4X0H6e3v9m9YqwSoA1UbkiXxsKRb9A8YHh1CWoCv4E4QCke1V6LGLsn_rEflsGcyPJLnhpdaekHfQdczgQ9cH9rYR6LPvDerVl4snF2kerGr-aFl51ZR9tZSlFhBnPrcy3m4n4dRDaZPaji_j_xf5Zf179Z"/>
+</div>
+<h1 class="font-display-lg-mobile text-display-lg-mobile font-bold text-primary">FitnessRAG</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant/40 transition-colors text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-24 px-container-margin md:px-32 max-w-7xl mx-auto space-y-section-gap">
+<!-- Today's Summary Overview -->
+<section>
+<div class="flex items-center justify-between mb-4">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Today's Summary</h2>
+<div class="flex items-center gap-2 px-3 py-1 bg-surface-variant/50 rounded-full border border-white/5 animate-breathe">
+<span class="w-2 h-2 rounded-full bg-neon-green animate-pulse"></span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">LIVE SYNC</span>
+</div>
+</div>
+<!-- Main Metric Glass Card (Bento Style) -->
+<div class="glass-panel p-card-padding relative overflow-hidden">
+<!-- Decorative background elements -->
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary-container/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+<div class="grid grid-cols-2 gap-4">
+<!-- Left: Progress Ring -->
+<div class="col-span-1 flex flex-col items-center justify-center relative h-32 w-32 mx-auto">
+<div class="absolute inset-0 z-0" id="three-container"></div>
+<div class="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
+<span class="font-stats-numeric text-stats-numeric text-neon-green">82</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant mt-1">SCORE</span>
+</div>
+</div>
+<!-- Right: Quick Stats -->
+<div class="col-span-1 flex flex-col justify-center space-y-4 animate-fade-in-up stagger-1">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-[16px]">local_fire_department</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">CALORIES</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface tracking-tight">2,450 <span class="text-body-md text-on-surface-variant">kcal</span></div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full mt-2 overflow-hidden">
+<div class="h-full bg-primary w-[75%] rounded-full shadow-[0_0_8px_rgba(220,184,255,0.5)]"></div>
+</div>
+</div>
+<div class="animate-fade-in-up stagger-2">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-[16px]">directions_walk</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">STEPS</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface tracking-tight">8,240 <span class="text-body-md text-on-surface-variant">/ 10k</span></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Detailed Metrics Grid -->
+<section>
+<div class="grid grid-cols-2 gap-gutter">
+<!-- Workout Time Card -->
+<div class="glass-panel p-card-padding flex flex-col justify-between h-36 relative group hover:border-primary/30 transition-colors animate-fade-in-up stagger-2">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">timer</span>
+<div class="px-2 py-0.5 rounded-full bg-primary-container/20 border border-primary/20 flex items-center justify-center">
+<span class="text-[10px] font-bold text-primary">+12%</span>
+</div>
+</div>
+<div>
+<div class="font-stats-numeric text-[28px] leading-none text-on-surface mb-1">45<span class="text-body-md text-on-surface-variant ml-1">min</span></div>
+<div class="font-label-caps text-[10px] text-on-surface-variant">ACTIVE WORKOUT</div>
+</div>
+</div>
+<!-- Heart Rate Card -->
+<div class="glass-panel p-card-padding flex flex-col justify-between h-36 relative group hover:border-error/30 transition-colors animate-fade-in-up stagger-3">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-error bg-error/10 p-2 rounded-lg">favorite</span>
+<!-- Mini sparkline mock -->
+<svg class="w-12 h-6" viewbox="0 0 50 20">
+<polyline fill="none" points="0,15 10,12 20,18 25,5 30,16 40,10 50,14" stroke="#ffb4ab" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polyline>
+</svg>
+</div>
+<div>
+<div class="font-stats-numeric text-[28px] leading-none text-on-surface mb-1">112<span class="text-body-md text-on-surface-variant ml-1">bpm</span></div>
+<div class="font-label-caps text-[10px] text-on-surface-variant">AVG HEART RATE</div>
+</div>
+</div>
+</div>
+</section>
+<!-- AI Insight Module -->
+<section>
+<div class="glass-panel p-card-padding border-l-4 border-l-primary glow-accent relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-r from-primary-container/5 to-transparent z-0"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-primary text-[20px]">auto_awesome</span>
+<span class="font-label-caps text-label-caps text-primary tracking-widest">COACH INSIGHT</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                        Your recovery metric is peaking. Based on yesterday's rest, you're primed for a high-intensity session today. Suggested: <strong class="text-on-surface">HIIT or Heavy Lifts</strong>.
+                    </p>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full bg-surface-container/60 dark:bg-surface-container/60 backdrop-blur-2xl border border-white/20 shadow-2xl z-50 flex justify-around items-center px-6 py-3 max-w-md mx-auto"><!-- Tab 1: Chat (Active) -->
+<a class="relative flex items-center justify-center bg-primary-container text-on-primary-container rounded-full w-12 h-12 shadow-[0_0_15px_rgba(138,43,226,0.4)] transition-all hover:scale-110 active:scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">forum</span>
+<!-- Glowing indicator below -->
+<span class="absolute -bottom-2 w-4 h-1 bg-primary rounded-full shadow-[0_0_10px_#dcb8ff] animate-pulse"></span>
+</a>
+<!-- Tab 2: Dashboard (Inactive) -->
+<a class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:bg-surface-variant/40 hover:text-on-surface rounded-full transition-all hover:scale-110 active:scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+</a>
+<!-- Tab 3: Profile (Inactive) -->
+<a class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:bg-surface-variant/40 hover:text-on-surface rounded-full transition-all hover:scale-110 active:scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">person</span>
+</a></nav>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const container = document.getElementById('three-container');
+    if(container) {
+        const width = container.clientWidth || 128; // Fallback to 128 if 0 initially
+        const height = container.clientHeight || 128;
+        
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        
+        renderer.setSize(width, height);
+        container.appendChild(renderer.domElement);
+        
+        // Create a glowing, kinetic ring for the health score
+        const geometry = new THREE.TorusGeometry(2, 0.05, 16, 100);
+        const material = new THREE.MeshPhongMaterial({ 
+            color: 0x39FF14, // Neon Green
+            emissive: 0x39FF14,
+            emissiveIntensity: 0.5,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        const ring = new THREE.Mesh(geometry, material);
+        scene.add(ring);
+        
+        const light = new THREE.PointLight(0xffffff, 1, 100);
+        light.position.set(5, 5, 5);
+        scene.add(light);
+        
+        camera.position.z = 5;
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            ring.rotation.z += 0.01;
+            ring.rotation.x += 0.005;
+            
+            // Gentle pulsing effect
+            const scale = 1.0 + Math.sin(Date.now() * 0.002) * 0.05;
+            ring.scale.set(scale, scale, scale);
+            
+            renderer.render(scene, camera);
+        }
+        
+        window.addEventListener('resize', () => {
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            if(w && h) {
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            }
+        });
+        
+        animate();
+    }
+});
+</script>
+</body></html>
