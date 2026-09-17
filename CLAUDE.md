@@ -13,8 +13,7 @@ Do not implement work directly from a vague request. Work must map to a GitHub I
 5. Prefer the smallest change that satisfies the requirement.
 
 ## Branching
-- `master`: protected production/release branch conceptually. Do not develop directly on it.
-- `develop`: integration branch for completed feature work.
+- `main`: protected production/release branch. Do not develop directly on it.
 - Feature branches: `feature/FIT-<issue-number>-short-description`
 - Bug fixes: `fix/FIT-<issue-number>-short-description`
 - Hotfixes: `hotfix/FIT-<issue-number>-short-description`
@@ -40,7 +39,7 @@ At minimum:
 Run the narrowest relevant tests while developing, then the broader test suite before opening a PR.
 
 ## Pull requests
-A completed ticket should normally result in a focused PR into `develop`.
+A completed ticket should normally result in a focused PR into `main`.
 
 A PR must explain:
 - What changed
