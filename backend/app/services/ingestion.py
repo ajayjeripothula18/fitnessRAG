@@ -42,6 +42,7 @@ _splitter = RecursiveCharacterTextSplitter(
 # Embedding helper (calls local Ollama)
 # ---------------------------------------------------------------------------
 
+
 def _embed_texts(texts: list[str]) -> list[list[float]]:
     """
     Generate embeddings for a list of texts using the configured Ollama model.
@@ -61,6 +62,7 @@ def _embed_texts(texts: list[str]) -> list[list[float]]:
 # ---------------------------------------------------------------------------
 # Chunk generators
 # ---------------------------------------------------------------------------
+
 
 def _split_documents(docs: list[Document]) -> list[Document]:
     """Split a list of LangChain documents into smaller chunks."""
@@ -82,6 +84,7 @@ def load_from_file(file_path: str) -> list[Document]:
 # ---------------------------------------------------------------------------
 # Batch ingestion
 # ---------------------------------------------------------------------------
+
 
 def _batch(seq: Sequence, n: int) -> Generator[Sequence, None, None]:
     """Yield successive n-sized batches from seq."""
@@ -134,7 +137,9 @@ def ingest_documents(
         db.add_all(db_objs)
         db.flush()  # batch write; caller commits
         total += len(db_objs)
-        logger.info("Ingested batch of %d chunks (total so far: %d).", len(db_objs), total)
+        logger.info(
+            "Ingested batch of %d chunks (total so far: %d).", len(db_objs), total
+        )
 
     db.commit()
     logger.info("Ingestion complete. Total chunks stored: %d", total)

@@ -15,8 +15,12 @@ class ConversationTurn(BaseModel):
 class ChatRequest(BaseModel):
     """Request body for POST /api/v1/chat/message."""
 
-    message: str = Field(..., min_length=1, max_length=4096, description="User's fitness question.")
-    conversation_id: Optional[int] = Field(None, description="Existing conversation ID for multi-turn chat.")
+    message: str = Field(
+        ..., min_length=1, max_length=4096, description="User's fitness question."
+    )
+    conversation_id: Optional[int] = Field(
+        None, description="Existing conversation ID for multi-turn chat."
+    )
     history: list[ConversationTurn] = Field(
         default_factory=list,
         max_length=20,  # Limit history depth to control context window

@@ -32,6 +32,7 @@ router = APIRouter()
 # POST /message — Main chat endpoint
 # ---------------------------------------------------------------------------
 
+
 @router.post("/message", response_model=ChatResponse, status_code=status.HTTP_200_OK)
 async def send_message(
     payload: ChatRequest,
@@ -95,7 +96,7 @@ async def send_message(
                 "response": "",
                 "citations": [],
                 "skip_generation": False,
-            }
+            },
         )
     except Exception as exc:
         logger.error("LangGraph invocation failed: %s", exc)
@@ -133,6 +134,7 @@ async def send_message(
 # GET /history — Return recent messages for a conversation
 # ---------------------------------------------------------------------------
 
+
 @router.get("/history/{conversation_id}", status_code=status.HTTP_200_OK)
 async def get_history(
     conversation_id: int,
@@ -151,7 +153,9 @@ async def get_history(
     )
     conversation = result.scalars().first()
     if not conversation:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found."
+        )
 
     msg_result = await db.execute(
         select(Message)
@@ -164,7 +168,12 @@ async def get_history(
     return {
         "conversation_id": conversation_id,
         "messages": [
-            {"id": m.id, "role": m.role, "content": m.content, "created_at": m.created_at}
+            {
+                "id": m.id,
+                "role": m.role,
+                "content": m.content,
+                "created_at": m.created_at,
+            }
             for m in messages
         ],
     }

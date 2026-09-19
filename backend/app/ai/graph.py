@@ -37,32 +37,34 @@ logger = logging.getLogger(__name__)
 # Graph State
 # ---------------------------------------------------------------------------
 
+
 class AgentState(TypedDict):
     """Shared state object that flows through every graph node."""
 
     # Inputs
     user_query: str
-    conversation_history: list[dict]   # [{"role": "user"|"assistant", "content": "..."}]
-    db: object                          # SQLAlchemy Session (injected by caller)
+    conversation_history: list[dict]  # [{"role": "user"|"assistant", "content": "..."}]
+    db: object  # SQLAlchemy Session (injected by caller)
 
     # Safety
-    safety_tier: str                    # "safe" | "medical" | "dangerous"
-    safety_message: str                 # pre-formed response for non-safe queries
+    safety_tier: str  # "safe" | "medical" | "dangerous"
+    safety_message: str  # pre-formed response for non-safe queries
 
     # Retrieval
     retrieved_chunks: list[RetrievedChunk]
 
     # Generation
     response: str
-    citations: list[dict]              # [{"title": ..., "url": ..., "page": ...}]
+    citations: list[dict]  # [{"title": ..., "url": ..., "page": ...}]
 
     # Control
-    skip_generation: bool              # True when safety blocks the query
+    skip_generation: bool  # True when safety blocks the query
 
 
 # ---------------------------------------------------------------------------
 # LLM Client
 # ---------------------------------------------------------------------------
+
 
 def _get_llm():
     primary_llm = ChatOllama(
@@ -78,14 +80,14 @@ def _get_llm():
             from langchain_openai import ChatOpenAI
             from langchain_core.runnables import RunnableLambda
             import httpx
-            
+
             fallback_llm = ChatOpenAI(
                 model="gpt-3.5-turbo",
                 api_key=settings.OPENAI_API_KEY,
                 temperature=0.7,
                 max_tokens=1024,
             )
-            
+
             def log_fallback(input_val, config, **kwargs):
                 logger.warning("Ollama primary LLM failed. Triggering OpenAI fallback.")
                 return fallback_llm.invoke(input_val, config=config, **kwargs)
@@ -93,11 +95,17 @@ def _get_llm():
             # Apply fallback to primary LLM
             return primary_llm.with_fallbacks(
                 [RunnableLambda(log_fallback)],
-                exceptions_to_handle=(TimeoutError, httpx.TimeoutException, httpx.ConnectError),
+                exceptions_to_handle=(
+                    TimeoutError,
+                    httpx.TimeoutException,
+                    httpx.ConnectError,
+                ),
             )
         except ImportError:
-            logger.warning("langchain_openai not installed. Cannot configure OpenAI fallback.")
-    
+            logger.warning(
+                "langchain_openai not installed. Cannot configure OpenAI fallback."
+            )
+
     return primary_llm
 
 
@@ -105,13 +113,29 @@ def _get_llm():
 # Node: Safety Check
 # ---------------------------------------------------------------------------
 _DANGEROUS_KEYWORDS = {
-    "suicide", "self-harm", "overdose", "anorexia", "bulimia",
-    "steroid injection", "doping", "drug abuse",
+    "suicide",
+    "self-harm",
+    "overdose",
+    "anorexia",
+    "bulimia",
+    "steroid injection",
+    "doping",
+    "drug abuse",
 }
 _MEDICAL_KEYWORDS = {
-    "diagnose", "diagnosis", "prescription", "medication", "surgery",
-    "disease", "disorder", "chronic", "cancer", "diabetes", "heart attack",
-    "blood pressure medication", "clinical trial",
+    "diagnose",
+    "diagnosis",
+    "prescription",
+    "medication",
+    "surgery",
+    "disease",
+    "disorder",
+    "chronic",
+    "cancer",
+    "diabetes",
+    "heart attack",
+    "blood pressure medication",
+    "clinical trial",
 }
 
 
@@ -145,12 +169,18 @@ def node_safety_check(state: AgentState) -> AgentState:
             "skip_generation": False,
         }
 
-    return {**state, "safety_tier": "safe", "safety_message": "", "skip_generation": False}
+    return {
+        **state,
+        "safety_tier": "safe",
+        "safety_message": "",
+        "skip_generation": False,
+    }
 
 
 # ---------------------------------------------------------------------------
 # Node: Retrieve
 # ---------------------------------------------------------------------------
+
 
 def node_retrieve(state: AgentState) -> AgentState:
     """Hybrid retrieval: vector + BM25 + RRF fusion."""
@@ -201,7 +231,14 @@ def node_generate(state: AgentState) -> AgentState:
         context_parts = []
         for i, chunk in enumerate(chunks, start=1):
             context_parts.append(f"[Source {i}] {chunk.source_title}\n{chunk.content}")
-            citations.append({"index": i, "title": chunk.source_title, "url": chunk.source_url, "page": chunk.page_number})
+            citations.append(
+                {
+                    "index": i,
+                    "title": chunk.source_title,
+                    "url": chunk.source_url,
+                    "page": chunk.page_number,
+                }
+            )
         context = "\n\n---\n\n".join(context_parts)
     else:
         context = "No reference material available."
@@ -218,13 +255,17 @@ def node_generate(state: AgentState) -> AgentState:
         result = llm.invoke(messages)
         latency = time.time() - start_time
         response_text: str = result.content
-        
+
         # Log usage if available
-        usage = getattr(result, "usage_metadata", None) or result.response_metadata.get("token_usage", "unknown")
+        usage = getattr(result, "usage_metadata", None) or result.response_metadata.get(
+            "token_usage", "unknown"
+        )
         logger.info("LLM generation succeeded in %.2fs. Usage: %s", latency, usage)
     except Exception as exc:
         logger.error("LLM generation failed: %s", exc)
-        response_text = "I'm having trouble connecting right now. Please try again in a moment."
+        response_text = (
+            "I'm having trouble connecting right now. Please try again in a moment."
+        )
 
     if state.get("safety_tier") == "medical" and state.get("safety_message"):
         response_text = state["safety_message"] + "\n\n" + response_text
@@ -236,19 +277,25 @@ def node_generate(state: AgentState) -> AgentState:
 # Node: Output Safety
 # ---------------------------------------------------------------------------
 
+
 def node_output_safety(state: AgentState) -> AgentState:
     """Lightweight output guard — redact if dangerous keywords appear in response."""
     response = state.get("response", "")
     for kw in _DANGEROUS_KEYWORDS:
         if kw in response.lower():
             logger.warning("Output safety: dangerous keyword in response — redacting.")
-            return {**state, "response": "I'm not able to provide that information. Please consult a qualified professional.", "citations": []}
+            return {
+                **state,
+                "response": "I'm not able to provide that information. Please consult a qualified professional.",
+                "citations": [],
+            }
     return state
 
 
 # ---------------------------------------------------------------------------
 # Routing
 # ---------------------------------------------------------------------------
+
 
 def route_after_safety(state: AgentState) -> str:
     return "output_safety" if state.get("safety_tier") == "dangerous" else "retrieve"
@@ -257,6 +304,7 @@ def route_after_safety(state: AgentState) -> str:
 # ---------------------------------------------------------------------------
 # Build the graph
 # ---------------------------------------------------------------------------
+
 
 def build_graph():
     graph = StateGraph(AgentState)

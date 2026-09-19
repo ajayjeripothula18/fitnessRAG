@@ -6,13 +6,19 @@ import os
 import sys
 
 # Add the app directory to the path so we can import our models
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Import the Base from our models
 from app.db.session import Base  # noqa: F401
 
 # Import all models so Alembic can detect changes
-from app.models import user, profile, conversation, message, document_chunk  # noqa: F401
+from app.models import (
+    user,
+    profile,
+    conversation,
+    message,
+    document_chunk,
+)  # noqa: F401
 from app.core.config import settings
 
 # This is the Alembic Config object, which provides
@@ -61,13 +67,13 @@ def run_migrations_offline():
 import asyncio
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+
 def do_run_migrations(connection):
-    context.configure(
-        connection=connection, target_metadata=target_metadata
-    )
+    context.configure(connection=connection, target_metadata=target_metadata)
 
     with context.begin_transaction():
         context.run_migrations()
+
 
 async def run_async_migrations():
     """In this scenario we need to create an Engine
@@ -90,9 +96,11 @@ async def run_async_migrations():
 
     await connectable.dispose()
 
+
 def run_migrations_online():
     """Run migrations in 'online' mode."""
     asyncio.run(run_async_migrations())
+
 
 if context.is_offline_mode():
     run_migrations_offline()

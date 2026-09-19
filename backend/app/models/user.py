@@ -12,7 +12,11 @@ class User(BaseModel):
     is_verified = Column(Boolean, default=False)
 
     # Relationships
-    profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
-    conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
+    profile = relationship(
+        "Profile", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
+    conversations = relationship(
+        "Conversation", back_populates="user", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (UniqueConstraint("email", name="uq_email"),)

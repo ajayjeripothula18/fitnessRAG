@@ -43,20 +43,27 @@ def _base_state(**overrides) -> AgentState:
 # node_safety_check
 # ---------------------------------------------------------------------------
 
+
 class TestNodeSafetyCheck:
     def test_safe_query(self):
-        state = node_safety_check(_base_state(user_query="Best exercises for core strength?"))
+        state = node_safety_check(
+            _base_state(user_query="Best exercises for core strength?")
+        )
         assert state["safety_tier"] == "safe"
         assert not state["skip_generation"]
 
     def test_dangerous_query_is_blocked(self):
-        state = node_safety_check(_base_state(user_query="How to do a steroid injection?"))
+        state = node_safety_check(
+            _base_state(user_query="How to do a steroid injection?")
+        )
         assert state["safety_tier"] == "dangerous"
         assert state["skip_generation"] is True
         assert "crisis helpline" in state["safety_message"]
 
     def test_medical_query_adds_disclaimer(self):
-        state = node_safety_check(_base_state(user_query="Can I exercise after heart attack?"))
+        state = node_safety_check(
+            _base_state(user_query="Can I exercise after heart attack?")
+        )
         assert state["safety_tier"] == "medical"
         assert not state["skip_generation"]
         assert "healthcare professional" in state["safety_message"]
@@ -65,6 +72,7 @@ class TestNodeSafetyCheck:
 # ---------------------------------------------------------------------------
 # node_retrieve
 # ---------------------------------------------------------------------------
+
 
 class TestNodeRetrieve:
     def test_skips_when_blocked(self):
@@ -90,6 +98,7 @@ class TestNodeRetrieve:
 # ---------------------------------------------------------------------------
 # node_generate
 # ---------------------------------------------------------------------------
+
 
 class TestNodeGenerate:
     def test_returns_safety_message_when_blocked(self):
@@ -120,7 +129,9 @@ class TestNodeGenerate:
     @patch("app.ai.graph._get_llm")
     def test_prepends_medical_disclaimer(self, mock_llm_factory):
         mock_llm = MagicMock()
-        mock_llm.invoke.return_value = MagicMock(content="Moderate exercise is generally safe.")
+        mock_llm.invoke.return_value = MagicMock(
+            content="Moderate exercise is generally safe."
+        )
         mock_llm_factory.return_value = mock_llm
 
         state = _base_state(
@@ -143,6 +154,7 @@ class TestNodeGenerate:
 # node_output_safety
 # ---------------------------------------------------------------------------
 
+
 class TestNodeOutputSafety:
     def test_passes_clean_response(self):
         state = _base_state(response="Great workout plan for beginners!")
@@ -159,6 +171,7 @@ class TestNodeOutputSafety:
 # ---------------------------------------------------------------------------
 # Routing
 # ---------------------------------------------------------------------------
+
 
 class TestRouting:
     def test_dangerous_routes_to_output_safety(self):
@@ -178,8 +191,10 @@ class TestRouting:
 # Graph compilation smoke test
 # ---------------------------------------------------------------------------
 
+
 class TestGraphCompilation:
     def test_graph_compiles_without_error(self):
         from app.ai.graph import build_graph
+
         graph = build_graph()
         assert graph is not None

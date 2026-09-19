@@ -20,8 +20,8 @@ import os
 
 # PostgreSQL DB for testing
 TEST_DATABASE_URL = os.environ.get(
-    "TEST_DATABASE_URL", 
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/fitnessrag_test"
+    "TEST_DATABASE_URL",
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/fitnessrag_test",
 )
 
 from sqlalchemy.pool import NullPool
@@ -38,6 +38,7 @@ TestingSessionLocal = sessionmaker(
 )
 
 import asyncio
+
 
 @pytest.fixture(scope="session")
 def event_loop():

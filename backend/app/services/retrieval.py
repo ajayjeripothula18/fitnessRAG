@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-TOP_K_VECTOR = 20   # Candidates retrieved from vector search
-TOP_K_FINAL = 5    # Results returned to the LangGraph agent
+TOP_K_VECTOR = 20  # Candidates retrieved from vector search
+TOP_K_FINAL = 5  # Results returned to the LangGraph agent
 
 
 # ---------------------------------------------------------------------------
@@ -32,6 +32,7 @@ TOP_K_FINAL = 5    # Results returned to the LangGraph agent
 @dataclass
 class RetrievedChunk:
     """A retrieved document chunk with provenance metadata and score."""
+
     id: int
     content: str
     source_url: str
@@ -56,10 +57,14 @@ def _embed_query(query: str) -> list[float]:
 # ---------------------------------------------------------------------------
 # Vector retrieval
 # ---------------------------------------------------------------------------
-def _vector_search(query_embedding: list[float], db: Session, top_k: int = TOP_K_VECTOR) -> list[tuple[DocumentChunk, float]]:
+def _vector_search(
+    query_embedding: list[float], db: Session, top_k: int = TOP_K_VECTOR
+) -> list[tuple[DocumentChunk, float]]:
     """Retrieve top-k document chunks by cosine similarity."""
     embedding_literal = "[" + ",".join(str(v) for v in query_embedding) + "]"
-    distance_expr = text(f"embedding <=> '{embedding_literal}'::vector").label("distance")
+    distance_expr = text(f"embedding <=> '{embedding_literal}'::vector").label(
+        "distance"
+    )
 
     # Use pgvector operator (<=> = cosine distance) for ordering
     rows = (
@@ -100,9 +105,13 @@ def retrieve(query: str, db: Session, top_k: int = TOP_K_FINAL) -> list[Retrieve
         raise
 
     vector_results = _vector_search(query_embedding, db, top_k=top_k)
-    
+
     latency = time.time() - start_time
-    logger.info("Retrieval completed in %.3f seconds, found %d results", latency, len(vector_results))
+    logger.info(
+        "Retrieval completed in %.3f seconds, found %d results",
+        latency,
+        len(vector_results),
+    )
 
     if not vector_results:
         logger.warning("Vector search returned no results for query: %s", query)
