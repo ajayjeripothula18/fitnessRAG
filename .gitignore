@@ -164,8 +164,6 @@ ehthumbs.db
 Thumbs.db
 
 # Backend specific
-backend/**/alembic/versions/*.py
-!backend/**/alembic/versions/__init__.py
 # Additional Exclusions
 graphify-out/
 pgdata/
