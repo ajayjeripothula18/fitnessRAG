@@ -122,8 +122,8 @@ async def send_message(
 
     # --- Step 5: Return --------------------------------------------------------
     return ChatResponse(
-        conversation_id=conversation.id,
-        message_id=ai_message.id,
+        conversation_id=int(conversation.id),
+        message_id=int(ai_message.id),
         response=ai_response,
         citations=[CitationSchema(**c) for c in citations_raw],
         safety_tier=safety_tier,

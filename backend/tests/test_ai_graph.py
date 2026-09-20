@@ -35,7 +35,7 @@ def _base_state(**overrides) -> AgentState:
         "citations": [],
         "skip_generation": False,
     }
-    state.update(overrides)
+    state.update(overrides)  # type: ignore[typeddict-item]
     return state
 
 

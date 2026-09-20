@@ -12,15 +12,15 @@ app = FastAPI(
 
 # Set up CORS
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    CORSMiddleware,  # type: ignore[arg-type]
+    allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],  # type: ignore[call-arg]
+    allow_credentials=True,  # type: ignore[call-arg]
+    allow_methods=["*"],  # type: ignore[call-arg]
+    allow_headers=["*"],  # type: ignore[call-arg]
 )
 
 # Add safety gateway middleware
-app.add_middleware(SafetyGatewayMiddleware)
+app.add_middleware(SafetyGatewayMiddleware)  # type: ignore[arg-type, call-arg]
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])

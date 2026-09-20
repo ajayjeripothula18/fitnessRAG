@@ -9,9 +9,11 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
+from typing import Sequence
 
 import ollama
 from sqlalchemy import text
+from sqlalchemy.sql.elements import Label
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -44,12 +46,11 @@ class RetrievedChunk:
 # ---------------------------------------------------------------------------
 # Embedding helper (reuse from ingestion)
 # ---------------------------------------------------------------------------
-def _embed_query(query: str) -> list[float]:
+def _embed_query(query: str) -> Sequence[float]:
     """Generate a single embedding vector for a search query."""
-    response = ollama.embed(
+    response = ollama.Client(host=settings.OLLAMA_BASE_URL).embed(
         model=settings.OLLAMA_EMBEDDING_MODEL,
         input=[query],
-        host=settings.OLLAMA_BASE_URL,
     )
     return response.embeddings[0]
 
@@ -58,7 +59,7 @@ def _embed_query(query: str) -> list[float]:
 # Vector retrieval
 # ---------------------------------------------------------------------------
 def _vector_search(
-    query_embedding: list[float], db: Session, top_k: int = TOP_K_VECTOR
+    query_embedding: Sequence[float], db: Session, top_k: int = TOP_K_VECTOR
 ) -> list[tuple[DocumentChunk, float]]:
     """Retrieve top-k document chunks by cosine similarity."""
     embedding_literal = "[" + ",".join(str(v) for v in query_embedding) + "]"
@@ -119,12 +120,14 @@ def retrieve(query: str, db: Session, top_k: int = TOP_K_FINAL) -> list[Retrieve
 
     return [
         RetrievedChunk(
-            id=chunk.id,
-            content=chunk.content,
-            source_url=chunk.source_url,
-            source_title=chunk.source_title,
-            page_number=chunk.page_number,
-            vector_score=score,
+            id=int(chunk.id),
+            content=str(chunk.content),
+            source_url=str(chunk.source_url),
+            source_title=str(chunk.source_title),
+            page_number=int(chunk.page_number)
+            if chunk.page_number is not None
+            else None,
+            vector_score=float(score),
         )
         for chunk, score in vector_results
     ]

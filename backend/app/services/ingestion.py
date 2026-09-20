@@ -43,18 +43,19 @@ _splitter = RecursiveCharacterTextSplitter(
 # ---------------------------------------------------------------------------
 
 
-def _embed_texts(texts: list[str]) -> list[list[float]]:
+def _embed_texts(texts: list[str]) -> Sequence[Sequence[float]]:
     """
     Generate embeddings for a list of texts using the configured Ollama model.
 
     Returns a list of float vectors (one per input text).
     """
     import ollama  # lazy import – not needed at module load
+    from ollama import Client
 
-    response = ollama.embed(
+    client = Client(host=settings.OLLAMA_BASE_URL)
+    response = client.embed(
         model=settings.OLLAMA_EMBEDDING_MODEL,
         input=texts,
-        host=settings.OLLAMA_BASE_URL,
     )
     return response.embeddings
 

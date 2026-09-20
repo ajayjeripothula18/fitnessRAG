@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import TypedDict
+from typing import TypedDict, Union
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
@@ -30,6 +30,7 @@ from langgraph.graph import END, START, StateGraph
 
 from app.core.config import settings
 from app.services.retrieval import RetrievedChunk
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class AgentState(TypedDict):
     # Inputs
     user_query: str
     conversation_history: list[dict]  # [{"role": "user"|"assistant", "content": "..."}]
-    db: object  # SQLAlchemy Session (injected by caller)
+    db: Session  # SQLAlchemy Session (injected by caller)
 
     # Safety
     safety_tier: str  # "safe" | "medical" | "dangerous"
@@ -77,7 +78,7 @@ def _get_llm():
 
     if settings.OPENAI_API_KEY:
         try:
-            from langchain_openai import ChatOpenAI
+            from langchain_openai import ChatOpenAI  # type: ignore[import]
             from langchain_core.runnables import RunnableLambda
             import httpx
 
@@ -243,7 +244,9 @@ def node_generate(state: AgentState) -> AgentState:
     else:
         context = "No reference material available."
 
-    messages = [SystemMessage(content=_SYSTEM_PROMPT.format(context=context))]
+    messages: list[Union[HumanMessage, SystemMessage]] = [
+        SystemMessage(content=_SYSTEM_PROMPT.format(context=context))
+    ]
     for turn in state.get("conversation_history", []):
         if turn["role"] == "user":
             messages.append(HumanMessage(content=turn["content"]))
