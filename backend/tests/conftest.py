@@ -3,8 +3,7 @@ import pytest
 import pytest_asyncio
 from typing import AsyncGenerator
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "../.env.test"))
@@ -31,7 +30,7 @@ test_engine = create_async_engine(
     poolclass=NullPool,
 )
 
-TestingSessionLocal = sessionmaker(
+TestingSessionLocal = async_sessionmaker(
     test_engine,
     class_=AsyncSession,
     expire_on_commit=False,
