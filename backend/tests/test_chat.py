@@ -22,10 +22,8 @@ async def test_chat_message_success(client: AsyncClient):
     headers = await _get_auth_headers(client)
 
     with patch("app.api.v1.chat.get_graph") as mock_get_graph:
-        from unittest.mock import AsyncMock
-
         mock_graph = MagicMock()
-        mock_graph.ainvoke = AsyncMock(
+        mock_graph.invoke = MagicMock(
             return_value={
                 "response": "Here is a safe response.",
                 "citations": [
@@ -60,10 +58,8 @@ async def test_chat_message_history(client: AsyncClient):
     headers = await _get_auth_headers(client, "user2@example.com")
 
     with patch("app.api.v1.chat.get_graph") as mock_get_graph:
-        from unittest.mock import AsyncMock
-
         mock_graph = MagicMock()
-        mock_graph.ainvoke = AsyncMock(
+        mock_graph.invoke = MagicMock(
             return_value={
                 "response": "Here is a safe response.",
                 "citations": [],
@@ -107,10 +103,8 @@ async def test_chat_graph_failure(client: AsyncClient):
     headers = await _get_auth_headers(client, "user3@example.com")
 
     with patch("app.api.v1.chat.get_graph") as mock_get_graph:
-        from unittest.mock import AsyncMock
-
         mock_graph = MagicMock()
-        mock_graph.ainvoke = AsyncMock(
+        mock_graph.invoke = MagicMock(
             side_effect=Exception("Ollama connection refused")
         )
         mock_get_graph.return_value = mock_graph
