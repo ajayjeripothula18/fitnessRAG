@@ -28,9 +28,7 @@ class Settings(BaseSettings):
     SQLALCHEMY_DATABASE_URL: str | None = Field(default=None, alias="DATABASE_URL")
 
     # CORS
-    BACKEND_CORS_ORIGINS: List[Union[str, str]] = Field(
-        default=["*"]
-    )
+    BACKEND_CORS_ORIGINS: List[Union[str, str]] = Field(default=["*"])
 
     # OpenAI
     OPENAI_API_KEY: str | None = None
@@ -44,7 +42,9 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_llm_config(self) -> "Settings":
         if not self.OPENAI_API_KEY and not self.OLLAMA_BASE_URL:
-            raise ValueError("Either OPENAI_API_KEY or OLLAMA_BASE_URL must be configured.")
+            raise ValueError(
+                "Either OPENAI_API_KEY or OLLAMA_BASE_URL must be configured."
+            )
         return self
 
     class Config:
@@ -53,4 +53,4 @@ class Settings(BaseSettings):
         extra = "ignore"
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]

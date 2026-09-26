@@ -2,9 +2,8 @@ import os
 import pytest
 import pytest_asyncio
 from typing import AsyncGenerator
-from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from httpx import AsyncClient, ASGITransport
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "../.env.test"))
@@ -20,8 +19,8 @@ import os
 
 # PostgreSQL DB for testing
 TEST_DATABASE_URL = os.environ.get(
-    "TEST_DATABASE_URL", 
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/fitnessrag_test"
+    "TEST_DATABASE_URL",
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/fitnessrag_test",
 )
 
 from sqlalchemy.pool import NullPool
@@ -31,13 +30,14 @@ test_engine = create_async_engine(
     poolclass=NullPool,
 )
 
-TestingSessionLocal = sessionmaker(
+TestingSessionLocal = async_sessionmaker(
     test_engine,
     class_=AsyncSession,
     expire_on_commit=False,
 )
 
 import asyncio
+
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -69,6 +69,8 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
         yield db_session
 
     app.dependency_overrides[get_async_session] = override_get_async_session
-    async with AsyncClient(app=app, base_url="http://testserver") as ac:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://testserver"
+    ) as ac:
         yield ac
     app.dependency_overrides.clear()

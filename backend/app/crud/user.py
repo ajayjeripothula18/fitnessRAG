@@ -29,7 +29,9 @@ async def create_user(session: AsyncSession, email: str, password: str) -> User:
     return user
 
 
-async def authenticate_user(session: AsyncSession, email: str, password: str) -> User | None:
+async def authenticate_user(
+    session: AsyncSession, email: str, password: str
+) -> User | None:
     user = await get_user_by_email(session, email)
     if not user:
         return None

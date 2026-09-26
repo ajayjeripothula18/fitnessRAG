@@ -18,6 +18,7 @@ from langchain_core.documents import Document
 # Helper utilities
 # ---------------------------------------------------------------------------
 
+
 class TestBatch:
     def test_even_batches(self):
         result = list(_batch(list(range(10)), 3))
@@ -42,7 +43,12 @@ class TestSplitDocuments:
             assert len(chunk.page_content) <= 512 + 50  # allow some tolerance
 
     def test_preserves_metadata(self):
-        docs = [Document(page_content="Short text.", metadata={"source": "https://example.com", "title": "Test"})]
+        docs = [
+            Document(
+                page_content="Short text.",
+                metadata={"source": "https://example.com", "title": "Test"},
+            )
+        ]
         chunks = _split_documents(docs)
         assert len(chunks) >= 1
         assert chunks[0].metadata.get("source") == "https://example.com"
@@ -52,12 +58,16 @@ class TestSplitDocuments:
 # Ingestion integration (mocked Ollama + in-memory DB session)
 # ---------------------------------------------------------------------------
 
+
 class TestIngestDocuments:
     def _make_docs(self, n: int = 3) -> list[Document]:
         return [
             Document(
                 page_content=f"Fitness tip number {i}: " + "exercise " * 50,
-                metadata={"source": f"https://example.com/tip-{i}", "title": f"Tip {i}"},
+                metadata={
+                    "source": f"https://example.com/tip-{i}",
+                    "title": f"Tip {i}",
+                },
             )
             for i in range(n)
         ]
@@ -66,7 +76,11 @@ class TestIngestDocuments:
     def test_ingest_creates_chunks(self, mock_embed):
         """Verify that ingestion creates DocumentChunk rows."""
         docs = self._make_docs(2)
-        chunks_count = len(__import__("app.services.ingestion", fromlist=["_split_documents"])._split_documents(docs))
+        chunks_count = len(
+            __import__(
+                "app.services.ingestion", fromlist=["_split_documents"]
+            )._split_documents(docs)
+        )
 
         # Mock embeddings — return 768-dim zero vectors for each chunk
         mock_embed.return_value = [[0.0] * 768] * chunks_count
@@ -79,7 +93,10 @@ class TestIngestDocuments:
         mock_db.flush.assert_called()
         mock_db.commit.assert_called_once()
 
-    @patch("app.services.ingestion._embed_texts", side_effect=ConnectionError("Ollama unreachable"))
+    @patch(
+        "app.services.ingestion._embed_texts",
+        side_effect=ConnectionError("Ollama unreachable"),
+    )
     def test_ingest_raises_on_embed_failure(self, _):
         """Ingestion should surface embedding errors, not silently swallow them."""
         docs = self._make_docs(1)
