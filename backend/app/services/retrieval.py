@@ -63,7 +63,7 @@ def _vector_search(
 ) -> list[tuple[DocumentChunk, float]]:
     """Retrieve top-k document chunks by cosine similarity."""
     embedding_literal = "[" + ",".join(str(v) for v in query_embedding) + "]"
-    distance_expr = text(f"embedding <=> '{embedding_literal}'::vector").label(
+    distance_expr: Label = text(f"embedding <=> '{embedding_literal}'::vector").label(
         "distance"
     )
 
