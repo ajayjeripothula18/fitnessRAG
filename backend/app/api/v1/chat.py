@@ -52,13 +52,13 @@ async def send_message(
     """
     # --- Step 1: Resolve conversation ------------------------------------------
     if payload.conversation_id:
-        result = await async_db.execute(
+        db_result = await async_db.execute(
             select(Conversation).where(
                 Conversation.id == payload.conversation_id,
                 Conversation.user_id == current_user.id,
             )
         )
-        conversation = result.scalars().first()
+        conversation = db_result.scalars().first()
         if not conversation:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
