@@ -57,9 +57,7 @@ jobs:
       - name: Run frontend linters
         run: |
           cd frontend
-          npx eslint . --ext .ts,.tsx
-          npx prettier --check "**/*.{ts,tsx,css,scss,js,jsx,json,md}"
-
+          npm run lint
       - name: Run backend tests
         run: |
           cd backend
