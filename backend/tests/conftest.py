@@ -4,6 +4,7 @@ import pytest_asyncio
 from typing import AsyncGenerator
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import text
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "../.env.test"))
@@ -49,6 +50,7 @@ def event_loop():
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def setup_test_db():
     async with test_engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield
