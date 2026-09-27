@@ -10,7 +10,9 @@ from app.schemas.auth import Token, UserCreate, UserLogin, UserResponse
 router = APIRouter()
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
 async def register(
     user_in: UserCreate,
     session: AsyncSession = Depends(get_async_session),
@@ -36,7 +38,9 @@ async def login(
     """
     OAuth2 compatible token login, get an access and refresh token.
     """
-    user = await authenticate_user(session, email=form_data.username, password=form_data.password)
+    user = await authenticate_user(
+        session, email=form_data.username, password=form_data.password
+    )
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -6,7 +6,7 @@ Each row represents a single chunk from a source document, with:
 - `content_tsv`: tsvector for BM25 full-text search (populated by DB trigger)
 - `source_url`, `source_title`, `page_number`: provenance for citation rendering
 """
-from pgvector.sqlalchemy import Vector
+from pgvector.sqlalchemy import Vector  # type: ignore[import]
 from sqlalchemy import Column, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.sql import func
@@ -33,7 +33,7 @@ class DocumentChunk(BaseModel):
     content_tsv = Column(TSVECTOR, nullable=True)
 
     # Vector embedding (768-dim from nomic-embed-text via Ollama)
-    embedding = Column(Vector(EMBEDDING_DIM), nullable=True)
+    embedding: Column[Vector] = Column(Vector(EMBEDDING_DIM), nullable=True)
 
     __table_args__ = (
         # HNSW index for fast approximate nearest-neighbour search on embeddings

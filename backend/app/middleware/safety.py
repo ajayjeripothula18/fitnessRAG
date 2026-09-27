@@ -18,6 +18,7 @@ class SafetyGatewayMiddleware(BaseHTTPMiddleware):
                 # Decode and check for dangerous/medical content
                 try:
                     import json
+
                     data = json.loads(body)
                     # Check if there's a message field
                     if "message" in data and isinstance(data["message"], str):

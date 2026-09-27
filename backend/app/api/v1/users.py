@@ -37,7 +37,9 @@ async def update_own_profile(
     """
     Update current user's profile.
     """
-    profile = await update_profile(session, user_id=current_user.id, profile_in=profile_in.dict(exclude_unset=True))
+    profile = await update_profile(
+        session, user_id=current_user.id, profile_in=profile_in.dict(exclude_unset=True)
+    )
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

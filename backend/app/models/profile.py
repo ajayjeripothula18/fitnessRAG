@@ -13,10 +13,14 @@ class Profile(BaseModel):
     sex = Column(String(20), nullable=True)  # male, female, other
     height_cm = Column(Integer, nullable=True)
     weight_kg = Column(Integer, nullable=True)
-    fitness_level = Column(String(50), nullable=True)  # beginner, intermediate, advanced
+    fitness_level = Column(
+        String(50), nullable=True
+    )  # beginner, intermediate, advanced
     primary_goal = Column(String(100), nullable=True)  # weight_loss, muscle_gain, etc.
     # Preferences
-    dietary_preference = Column(String(100), nullable=True)  # vegetarian, vegan, omnivore, etc.
+    dietary_preference = Column(
+        String(100), nullable=True
+    )  # vegetarian, vegan, omnivore, etc.
     allergies = Column(Text, nullable=True)
     available_equipment = Column(Text, nullable=True)  # JSON or comma-separated
     workout_location = Column(String(50), nullable=True)  # home, gym, outdoors

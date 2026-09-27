@@ -5,27 +5,68 @@ from app.core.config import settings
 # Medical keywords that should trigger a disclaimer
 MEDICAL_KEYWORDS = [
     # Symptoms
-    "chest pain", "shortness of breath", "difficulty breathing", "heart attack",
-    "stroke", "cancer", "tumor", "diabetes", "hypertension", "high blood pressure",
-    "seizure", "epilepsy", "asthma attack", "allergic reaction", "anaphylaxis",
-    "suicide", "self-harm", "depression", "anxiety", "panic attack",
+    "chest pain",
+    "shortness of breath",
+    "difficulty breathing",
+    "heart attack",
+    "stroke",
+    "cancer",
+    "tumor",
+    "diabetes",
+    "hypertension",
+    "high blood pressure",
+    "seizure",
+    "epilepsy",
+    "asthma attack",
+    "allergic reaction",
+    "anaphylaxis",
+    "suicide",
+    "self-harm",
+    "depression",
+    "anxiety",
+    "panic attack",
     # Medical conditions
-    "disease", "illness", "infection", "virus", "bacteria", "antibiotics",
-    "prescription", "medication", "drug", "dosage", "side effects",
+    "disease",
+    "illness",
+    "infection",
+    "virus",
+    "bacteria",
+    "antibiotics",
+    "prescription",
+    "medication",
+    "drug",
+    "dosage",
+    "side effects",
     # Body parts in medical context
-    "heart", "lung", "brain", "liver", "kidney", "spine", "spinal cord",
+    "heart",
+    "lung",
+    "brain",
+    "liver",
+    "kidney",
+    "spine",
+    "spinal cord",
 ]
 
 # Dangerous/harmful content that should be blocked
 DANGEROUS_KEYWORDS = [
     # Self-harm
-    "suicide", "self-harm", "cutting", " overdose", "hanging",
+    "suicide",
+    "self-harm",
+    "cutting",
+    " overdose",
+    "hanging",
     # Extreme diets
-    "tapeworm", "bleach", "drinking alcohol to lose weight",
+    "tapeworm",
+    "bleach",
+    "drinking alcohol to lose weight",
     # Harmful exercises
-    "cliff jumping", "base jumping without training",
+    "cliff jumping",
+    "base jumping without training",
     # Dangerous supplements
-    "dnp", "2,4-dinitrophenol", "ephedra", "yohimbine in high doses",
+    "dnp",
+    "2,4-dinitrophenol",
+    "ephedra",
+    "yohimbine in high doses",
 ]
 
 

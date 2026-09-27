@@ -8,7 +8,9 @@ async def get_profile_by_user_id(session: AsyncSession, user_id: int) -> Profile
     return result.scalar_one_or_none()
 
 
-async def update_profile(session: AsyncSession, user_id: int, profile_in: dict) -> Profile | None:
+async def update_profile(
+    session: AsyncSession, user_id: int, profile_in: dict
+) -> Profile | None:
     profile = await get_profile_by_user_id(session, user_id)
     if not profile:
         return None

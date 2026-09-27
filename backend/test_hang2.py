@@ -1,4 +1,6 @@
 from app.ai.graph import node_safety_check
+
+
 def _base_state(**kwargs):
     return {
         "user_query": "",
@@ -12,6 +14,7 @@ def _base_state(**kwargs):
         "skip_generation": False,
         **kwargs,
     }
+
 
 print("starting node_safety_check")
 state = node_safety_check(_base_state(user_query="Best exercises for core strength?"))
