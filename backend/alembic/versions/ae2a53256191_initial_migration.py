@@ -9,8 +9,8 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-import pgvector
-import pgvector.sqlalchemy
+import pgvector  # type: ignore[import-untyped]
+import pgvector.sqlalchemy  # type: ignore[import-untyped]
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
