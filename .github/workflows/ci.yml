@@ -67,6 +67,12 @@ jobs:
         run: |
           docker compose build
 
+      - name: Create temporary .env for Docker smoke test
+        run: |
+          cp .env.example .env
+          echo "" >> .env
+          echo "POSTGRES_SERVER=db" >> .env
+
       - name: Run Docker compose up (quick smoke test)
         run: |
           docker compose up -d db backend
