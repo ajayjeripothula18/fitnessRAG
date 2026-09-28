@@ -52,7 +52,7 @@ export const authService = {
   },
 
   async me(): Promise<UserResponse> {
-    const { data } = await api.get<UserResponse>('/api/v1/users/me');
+    const { data } = await api.get<UserResponse>('/api/v1/auth/me');
     return data;
   },
 
