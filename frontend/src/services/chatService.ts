@@ -21,21 +21,30 @@ export interface Conversation {
   messages: ChatMessage[];
 }
 
+// Backend citation shape from ChatResponse.citations
+export interface BackendCitation {
+  index: number;
+  title: string;
+  url: string;
+  page?: number;
+}
+
 export interface SendMessagePayload {
   message: string;
-  conversation_id?: string;
+  conversation_id?: number;
 }
 
 export interface SendMessageResponse {
-  conversation_id: string;
-  message: ChatMessage;
-  response: ChatMessage;
-  safety_tier?: string;
+  conversation_id: number;
+  message_id: number;
+  response: string;
+  citations: BackendCitation[];
+  safety_tier: string;
 }
 
 export const chatService = {
   async sendMessage(payload: SendMessagePayload): Promise<SendMessageResponse> {
-    const { data } = await api.post<SendMessageResponse>('/api/v1/chat', payload);
+    const { data } = await api.post<SendMessageResponse>('/api/v1/chat/message', payload);
     return data;
   },
 
