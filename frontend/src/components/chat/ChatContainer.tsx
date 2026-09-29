@@ -59,7 +59,7 @@ const ChatContainer: React.FC = () => {
   const [messages, setMessages] = useState<MessageData[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
+  const [conversationId, setConversationId] = useState<number | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const userInitial = (user?.full_name || user?.email || 'U')[0].toUpperCase();
@@ -118,11 +118,15 @@ const ChatContainer: React.FC = () => {
       if (!conversationId) setConversationId(result.conversation_id);
 
       const assistantMsg: MessageData = {
-        id: result.response.id,
+        id: String(result.message_id),
         role: 'assistant',
-        content: result.response.content,
-        timestamp: new Date(result.response.created_at),
-        citations: result.response.citations,
+        content: result.response,
+        timestamp: new Date(),
+        citations: result.citations.map(c => ({
+          id: String(c.index),
+          title: c.title,
+          url: c.url
+        })),
         safety_tier: result.safety_tier,
       };
       setMessages((prev) => [...prev, assistantMsg]);
