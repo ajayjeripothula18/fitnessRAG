@@ -59,6 +59,8 @@ jobs:
           cd frontend
           npm run lint
       - name: Run backend tests
+        env:
+          TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/fitnessrag_test
         run: |
           cd backend
           pytest -v
