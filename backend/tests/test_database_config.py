@@ -14,7 +14,9 @@ def test_explicit_valid_test_database_url(monkeypatch):
     )
     # Should not raise
     url = _get_test_database_url()
-    assert url == "postgresql+asyncpg://postgres:postgres@localhost:5432/fitnessrag_test"
+    assert (
+        url == "postgresql+asyncpg://postgres:postgres@localhost:5432/fitnessrag_test"
+    )
     parsed = urlparse(url.replace("+asyncpg", ""))
     assert parsed.path.lstrip("/") == "fitnessrag_test"
 
