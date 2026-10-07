@@ -22,11 +22,16 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 // ── Response interceptor: handle 401 ───────────────────────────────────────
 api.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       window.location.href = '/login';
+    }
+    // If we have a response and it contains a detail in the body, use that as the message
+    if (error.response && error.response.data && typeof error.response.data === 'object' && 'detail' in error.response.data) {
+      // Assuming the detail is a string
+      error.message = String(error.response.data.detail);
     }
     return Promise.reject(error);
   }
