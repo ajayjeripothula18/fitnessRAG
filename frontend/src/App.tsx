@@ -19,6 +19,7 @@ const LoginPage     = lazy(() => import('./pages/LoginPage'));
 const RegisterPage  = lazy(() => import('./pages/RegisterPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ChatPage      = lazy(() => import('./pages/ChatPage'));
+const ProfilePage   = lazy(() => import('./pages/ProfilePage'));
 
 // ─── Query Client ─────────────────────────────────────────────────────────────
 const queryClient = new QueryClient({
@@ -29,6 +30,13 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Expose queryClient to Cypress for test utilities
+// @ts-ignore: Cypress is not typed in the global scope
+if ((window as any).Cypress) {
+  // @ts-ignore: Cypress is not typed in the global scope
+  window.__QUERY_CLIENT__ = queryClient;
+}
 
 // ─── Skeleton fallback shown during lazy loading ──────────────────────────────
 const PageSkeleton: React.FC = () => (
@@ -99,7 +107,7 @@ const App: React.FC = () => {
                 path="/settings"
                 element={
                   <ProtectedRoute>
-                    <PlaceholderPage title="Settings" />
+                    <ProfilePage />
                   </ProtectedRoute>
                 }
               />
