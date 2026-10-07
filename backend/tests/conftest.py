@@ -6,8 +6,11 @@ from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy import text
 from dotenv import load_dotenv
+from urllib.parse import urlparse
+import asyncio
+import asyncpg
 
-load_dotenv(os.path.join(os.path.dirname(__file__), "../.env.test"))
+load_dotenv(os.path.join(os.path.dirname(__file__), "../.env.test"), override=True)
 
 from app.main import app
 from app.db.session import Base, get_async_session
@@ -18,11 +21,63 @@ from app.models.message import Message  # noqa
 
 import os
 
-# PostgreSQL DB for testing
-TEST_DATABASE_URL = os.environ.get(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/fitnessrag_test",
-)
+
+def _get_test_database_url():
+    # Determine the URL: explicit overrides .env.test
+    explicit = os.environ.get("TEST_DATABASE_URL")
+    if explicit:
+        url = explicit
+    else:
+        user = os.environ.get("POSTGRES_USER", "postgres")
+        password = os.environ.get("POSTGRES_PASSWORD", "postgres")
+        host = os.environ.get("POSTGRES_SERVER", "db")
+        port = os.environ.get("POSTGRES_PORT", "5432")
+        db = os.environ.get("POSTGRES_DB", "fitnessrag_test")
+        url = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{db}"
+    # Safety: ensure we are using a test database
+    parsed = urlparse(url.replace("+asyncpg", ""))  # strip driver for parsing
+    db_name = parsed.path.lstrip("/")
+    if db_name != "fitnessrag_test":
+        raise RuntimeError(
+            f"Test database must be 'fitnessrag_test', but got '{db_name}'. "
+            "Check your TEST_DATABASE_URL or .env.test."
+        )
+    return url
+
+
+def _ensure_test_database_exists(url):
+    """Create the test database if it does not exist."""
+    parsed = urlparse(url.replace("+asyncpg", ""))  # strip driver for parsing
+    db_name = parsed.path.lstrip("/")
+    user = parsed.username
+    password = parsed.password
+    host = parsed.hostname
+    port = parsed.port or 5432
+
+    async def _create_if_missing():
+        try:
+            conn = await asyncpg.connect(
+                user=user,
+                password=password,
+                database="postgres",
+                host=host,
+                port=port,
+            )
+            exists = await conn.fetchval(
+                "SELECT 1 FROM pg_database WHERE datname = $1", db_name
+            )
+            if not exists:
+                await conn.execute(f'CREATE DATABASE "{db_name}"')
+            await conn.close()
+        except Exception as e:
+            # If we cannot connect, let the original error surface later
+            raise
+
+    asyncio.run(_create_if_missing())
+
+
+TEST_DATABASE_URL = _get_test_database_url()
+_ensure_test_database_exists(TEST_DATABASE_URL)
 
 from sqlalchemy.pool import NullPool
 
@@ -36,6 +91,7 @@ TestingSessionLocal = async_sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
 )
+
 
 import asyncio
 
