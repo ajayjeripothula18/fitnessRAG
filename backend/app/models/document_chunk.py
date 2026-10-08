@@ -29,7 +29,7 @@ class DocumentChunk(BaseModel):
     # Content
     content = Column(Text, nullable=False)
 
-    # Full-text search (BM25 proxy) — auto-populated via DB trigger in migration
+    # Full-text search (BM25 proxy) — auto-populated via DB trigger
     content_tsv = Column(TSVECTOR, nullable=True)
 
     # Vector embedding (768-dim from nomic-embed-text via Ollama)
