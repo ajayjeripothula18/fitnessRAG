@@ -129,12 +129,18 @@ async def setup_test_db():
             text(
                 """
                 DROP TRIGGER IF EXISTS document_chunks_content_tsv_trigger ON document_chunks;
+                """
+            )
+        )
+        await conn.execute(
+            text(
+                """
                 CREATE TRIGGER document_chunks_content_tsv_trigger
                     BEFORE INSERT OR UPDATE OF content
                     ON document_chunks
                     FOR EACH ROW
                     EXECUTE FUNCTION update_document_chunks_content_tsv();
-            """
+                """
             )
         )
     yield
