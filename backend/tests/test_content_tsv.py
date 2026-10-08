@@ -67,7 +67,7 @@ async def test_content_tsv_updated_on_content_change(db_session: AsyncSession):
     content_tsv_str = str(chunk.content_tsv)
     assert len(content_tsv_str) > 0
     assert "'updat'" in content_tsv_str or "update" in content_tsv_str  # stemmed form
-    assert "'different'" in content_tsv_str or "different" in content_tsv_str
+    assert "'differ'" in content_tsv_str
     assert "'word'" in content_tsv_str or "word" in content_tsv_str
 
 
@@ -193,7 +193,7 @@ async def test_backfill_existing_null_content_tsv(db_session: AsyncSession):
         content_tsv_str = str(content_tsv_after)
         assert "'test'" in content_tsv_str or "test" in content_tsv_str
         assert "'content'" in content_tsv_str or "content" in content_tsv_str
-        assert "'backfill'" in content_tsv_str or "backfill" in content_tsv_str
+        assert "'backfil'" in content_tsv_str
 
         # Verify it matches the expected to_tsvector output
         expected_result = await db_session.execute(
