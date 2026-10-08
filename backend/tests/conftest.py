@@ -110,10 +110,11 @@ async def setup_test_db():
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-        
+
         # Create the trigger function and trigger for content_tsv
         await conn.execute(
-            text("""
+            text(
+                """
                 CREATE OR REPLACE FUNCTION update_document_chunks_content_tsv()
                 RETURNS TRIGGER AS $$
                 BEGIN
@@ -121,17 +122,20 @@ async def setup_test_db():
                     RETURN NEW;
                 END;
                 $$ LANGUAGE plpgsql;
-            """)
+            """
+            )
         )
         await conn.execute(
-            text("""
+            text(
+                """
                 DROP TRIGGER IF EXISTS document_chunks_content_tsv_trigger ON document_chunks;
                 CREATE TRIGGER document_chunks_content_tsv_trigger
                     BEFORE INSERT OR UPDATE OF content
                     ON document_chunks
                     FOR EACH ROW
                     EXECUTE FUNCTION update_document_chunks_content_tsv();
-            """)
+            """
+            )
         )
     yield
     async with test_engine.begin() as conn:
