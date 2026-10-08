@@ -53,7 +53,7 @@ async def test_content_tsv_updated_on_content_change(db_session: AsyncSession):
     original_content_tsv = chunk.content_tsv
 
     # Update the content
-    chunk.content = "Updated content with different words"
+    setattr(chunk, "content", "Updated content with different words")
     await db_session.flush()
 
     # Verify content_tsv was updated
@@ -85,7 +85,7 @@ async def test_content_tsv_unchanged_on_non_content_update(db_session: AsyncSess
     original_content_tsv = chunk.content_tsv
 
     # Update a non-content field
-    chunk.source_title = "Updated Source Title"
+    setattr(chunk, "source_title", "Updated Source Title")
     await db_session.flush()
 
     # Verify content_tsv was NOT updated
