@@ -1,6 +1,6 @@
 # FitnessRAG — Engineering Operating Model
 
-## v1.0 — Final Draft Pending Repository Adoption
+## v1.1 — Authoritative Model
 
 **Status:** Ready for adoption after independent review
 
@@ -111,15 +111,25 @@ Scrum concepts will be practiced where they create useful learning and delivery 
 
 AJ is the human Software Developer.
 
-Responsibilities:
+AJ remains the final engineering authority.
 
+AJ owns:
+- staging;
+- commits;
+- pushes;
+- PR creation;
+- GitHub Issue/Project changes;
+- merge decisions.
+
+CC must not perform those actions unless AJ explicitly changes the project rule.
+
+Responsibilities:
 - understand requirements,
 - question ambiguity,
 - implement work,
 - write/update tests,
 - inspect AI-generated changes,
 - run validation,
-- create pull requests,
 - respond to review feedback,
 - make final engineering decisions,
 - maintain quality.
@@ -174,7 +184,19 @@ It must not claim tests, CI, or deployment succeeded without evidence.
 Reference:
 https\://docs.anthropic.com/en/docs/claude-code/overview
 
-### 3.4 ChatGPT — Optional Concept Tutor
+### 3.4 AG — Independent Validator
+
+AG is an independent AI validator.
+
+AG reviews implementation, scope, tests, validation evidence, migrations/schema changes, CI failures, and hidden assumptions.
+
+AG is read-only.
+AG does not modify source, tests, Git, GitHub, Issues, Projects, commits, pushes, PRs, or merges unless AJ explicitly changes the rule.
+
+AG review is NOT equivalent to human peer review.
+AG findings can send work back to implementation before AJ commits.
+
+### 3.5 ChatGPT — Optional Concept Tutor
 
 ChatGPT is not a process authority.
 
@@ -467,23 +489,34 @@ The project favors short-lived branches and frequent integration rather than Git
 
 ---
 
-## 11. Pull Request Workflow
+## 11. Standard Work-Item Lifecycle
 
 Normal flow:
 
 ```text
-Issue
+Backlog
+→ Refinement
 → Ready
-→ branch
-→ implementation
-→ tests
+→ Sprint Planning
+→ Sprint Commitment
+→ Short-lived Branch
+→ Implementation
+→ Local Validation
+→ Independent AG Validation
+→ AJ Commit
+→ Push
 → PR
 → CI
-→ review
-→ fix/retest
-→ merge
-→ issue closes
+→ Review
+→ Fix/Retest
+→ Merge
+→ Done
+→ Sprint Review
+→ Retrospective
 ```
+
+AG validation must have an explicit feedback loop:
+if AG finds issues → return to implementation/validation → AG re-review → AJ acceptance.
 
 Use GitHub's issue/PR linking and closing behavior so the work item remains traceable.
 
@@ -516,22 +549,23 @@ If `main` breaks after merge, revert the offending commit immediately via `git r
 
 ---
 
-## 12. Code Review in a Solo AI-Assisted Project
+## 12. Review and Validation in a Solo AI-Assisted Project
 
 A solo project cannot truthfully claim a human peer review when no human peer reviewed the change.
 
 Therefore distinguish:
 
-### AI review
+### AI review (AG Validation)
 
-An independent AI review context can inspect:
-
+An independent AI review context (AG) can inspect:
 - correctness,
 - requirements,
 - maintainability,
 - security,
 - tests,
 - unnecessary complexity.
+
+AG review is NOT equivalent to human peer review.
 
 ### Human developer acceptance
 
@@ -540,8 +574,6 @@ AJ remains responsible for reviewing the feedback, understanding the change, and
 ### Future human review
 
 If another human collaborator joins the project, human peer review becomes the preferred review mechanism.
-
-The project should never describe AI self-review as equivalent to human peer review.
 
 ---
 
@@ -574,7 +606,7 @@ https\://scrumguides.org/docs/scrumguide/v2020/2020-Scrum-Guide-US.pdf
 
 ## 14. Evidence-First AI Rule
 
-Claims require evidence.
+Claims require evidence. Never claim a check passed without actual command/CI evidence.
 
 Examples:
 
@@ -603,6 +635,13 @@ human verification where appropriate
 
 AI summaries are useful, but evidence is authoritative.
 
+If a local validation check is blocked by the environment:
+- report the exact blocker;
+- do not pretend it passed;
+- do not alter the environment merely to make validation pass unless AJ explicitly authorizes it.
+
+CI remains the authoritative remote validation gate.
+
 ---
 
 ## 15. Claude Code Operating Rules
@@ -619,18 +658,37 @@ Claude Code must:
 8. Run relevant validation.
 9. Inspect the final diff.
 10. Report actual evidence.
-11. Prepare the PR.
+11. Prepare the PR for AJ.
 12. Stop when the change is ready for review.
 
-Claude Code must not:
+### Pre-push validation
 
-- invent requirements,
-- silently broaden scope,
-- perform unrelated refactors,
-- remove tests to make failures disappear,
-- weaken security/safety controls,
-- add unnecessary dependencies,
-- claim unverified success.
+Before AJ pushes, CC should run the available relevant validation:
+- formatting;
+- type checking;
+- linting;
+- focused tests;
+- relevant broader tests;
+- build/integration checks where applicable;
+- migration/schema validation where applicable;
+- final diff inspection;
+- final Git status inspection.
+
+The repository's actual CI configuration should be inspected when determining expected checks rather than guessed.
+
+Claude Code must not:
+- scope creep;
+- invent requirements;
+- silently broaden scope;
+- make unrelated file changes;
+- perform unrelated refactors;
+- remove tests to make failures disappear;
+- engage in unnecessary environment repair;
+- perform unauthorized package installation;
+- weaken security/safety controls;
+- leave temporary debugging artifacts in the repository;
+- perform unauthorized Git/GitHub operations;
+- claim validation without evidence.
 
 ---
 
@@ -1122,7 +1180,7 @@ The goal is credible evidence of engineering discipline, not simulated credentia
 
 ## 28. Adoption Sequence
 
-This v1.0 model becomes authoritative only after:
+This v1.1 model becomes authoritative only after:
 
 ```text
 Independent Claude review
@@ -1150,7 +1208,7 @@ No application-code changes are part of adoption itself.
 
 ## 29. Independent Review Request
 
-Before adoption, Claude.ai should independently challenge this v1.0 document.
+Before adoption, Claude.ai should independently challenge this v1.1 document.
 
 It should identify:
 
