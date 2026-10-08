@@ -23,6 +23,7 @@ async def test_content_tsv_populated_on_insert(db_session: AsyncSession):
 
     db_session.add(chunk)
     await db_session.flush()
+    await db_session.refresh(chunk)
 
     # Verify content_tsv was populated
     assert chunk.content_tsv is not None
@@ -49,12 +50,14 @@ async def test_content_tsv_updated_on_content_change(db_session: AsyncSession):
 
     db_session.add(chunk)
     await db_session.flush()
+    await db_session.refresh(chunk)
 
     original_content_tsv = chunk.content_tsv
 
     # Update the content
     setattr(chunk, "content", "Updated content with different words")
     await db_session.flush()
+    await db_session.refresh(chunk)
 
     # Verify content_tsv was updated
     assert chunk.content_tsv is not None
@@ -107,6 +110,7 @@ async def test_content_tsv_matches_to_tsvector_function(db_session: AsyncSession
 
     db_session.add(chunk)
     await db_session.flush()
+    await db_session.refresh(chunk)
 
     # Verify content_tsv matches to_tsvector output
     result = await db_session.execute(
@@ -141,7 +145,7 @@ async def test_backfill_existing_null_content_tsv(db_session: AsyncSession):
                 "source_url": "https://example.com/test",
                 "source_title": "Test Source",
                 "content": "Test content for backfill",
-                "embedding": [0.1] * 768,
+                "embedding": str([0.1] * 768),
             },
         )
         await db_session.flush()
