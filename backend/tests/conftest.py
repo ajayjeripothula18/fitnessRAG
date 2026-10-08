@@ -18,6 +18,7 @@ from app.models.user import User  # noqa
 from app.models.profile import Profile  # noqa
 from app.models.conversation import Conversation  # noqa
 from app.models.message import Message  # noqa
+from app.models.document_chunk import DocumentChunk  # noqa
 
 import os
 
@@ -109,6 +110,39 @@ async def setup_test_db():
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+
+        # Create the trigger function and trigger for content_tsv
+        await conn.execute(
+            text(
+                """
+                CREATE OR REPLACE FUNCTION update_document_chunks_content_tsv()
+                RETURNS TRIGGER AS $$
+                BEGIN
+                    NEW.content_tsv := to_tsvector('english', COALESCE(NEW.content, ''));
+                    RETURN NEW;
+                END;
+                $$ LANGUAGE plpgsql;
+            """
+            )
+        )
+        await conn.execute(
+            text(
+                """
+                DROP TRIGGER IF EXISTS document_chunks_content_tsv_trigger ON document_chunks;
+                """
+            )
+        )
+        await conn.execute(
+            text(
+                """
+                CREATE TRIGGER document_chunks_content_tsv_trigger
+                    BEFORE INSERT OR UPDATE OF content
+                    ON document_chunks
+                    FOR EACH ROW
+                    EXECUTE FUNCTION update_document_chunks_content_tsv();
+                """
+            )
+        )
     yield
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
