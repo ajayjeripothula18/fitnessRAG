@@ -14,6 +14,7 @@ export interface MessageData {
   timestamp: Date;
   citations?: Citation[];
   safety_tier?: string;
+  isError?: boolean;
 }
 
 export interface ChatMessageProps {
