@@ -60,7 +60,15 @@ const ChatContainer: React.FC = () => {
   const [messages, setMessages] = useState<MessageData[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [conversationId, setConversationId] = useState<number | undefined>(undefined);
+  // Initialize conversationId from localStorage
+  const [conversationId, setConversationId] = useState<number | undefined>(() => {
+    const persisted = localStorage.getItem('conversation_id');
+    if (persisted) {
+      const id = parseInt(persisted, 10);
+      return !isNaN(id) ? id : undefined;
+    }
+    return undefined;
+  });
   const [historyError, setHistoryError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -70,13 +78,15 @@ const ChatContainer: React.FC = () => {
   const fetchConversationHistory = useCallback(async (id: number) => {
     try {
       const historyData = await chatService.getHistory(id);
-      // Map backend message format to frontend MessageData
-      const mappedMessages: MessageData[] = historyData.messages.map(msg => ({
-        id: String(msg.id),
-        role: msg.role,
-        content: msg.content,
-        timestamp: new Date(msg.created_at),
-      }));
+      // Map backend message format to frontend MessageData, ensuring role is valid
+      const mappedMessages: MessageData[] = historyData.messages
+        .filter(msg => msg.role === "user" || msg.role === "assistant")
+        .map(msg => ({
+          id: String(msg.id),
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+          timestamp: new Date(msg.created_at),
+        }));
       setMessages(mappedMessages);
       setHistoryError(null); // Clear any previous error
     } catch (err) {
@@ -88,26 +98,32 @@ const ChatContainer: React.FC = () => {
     }
   }, []);
 
-  // ── Load persisted conversation_id and fetch history on mount ─────────────────
+  // ── Load persisted conversation_id and fetch history on mount/change ─────────────────
   useEffect(() => {
-    const persistedId = localStorage.getItem('conversation_id');
-    if (persistedId) {
-      const id = parseInt(persistedId, 10);
-      if (!isNaN(id)) {
-        setConversationId(id);
-        fetchConversationHistory(id);
+    async function loadHistory() {
+      if (conversationId !== undefined) {
+        // If we have a conversation ID, fetch its history and clear any error
+        await fetchConversationHistory(conversationId);
+        // Clear history error when we have a valid conversation ID
+        setHistoryError(null);
+      } else {
+        // No conversation ID: clear messages and error, and remove from localStorage
+        setMessages([]);
+        setHistoryError(null);
+        localStorage.removeItem('conversation_id');
       }
     }
-  }, [fetchConversationHistory]);
+
+    loadHistory();
+  }, [conversationId, fetchConversationHistory]);
 
   // ── Clear persisted conversation_id on logout/auth reset ───────────────────────
   useEffect(() => {
     if (!user) {
-      // User logged out, clear persisted conversation ID
-      localStorage.removeItem('conversation_id');
+      // User logged out: clear conversation ID (which will trigger the effect above)
+      // This setState is necessary to synchronize with auth state changes
+      // eslint-disable-next-line react/set-state-in-effect
       setConversationId(undefined);
-      setMessages([]);
-      setHistoryError(null);
     }
   }, [user]);
 
@@ -207,7 +223,7 @@ const ChatContainer: React.FC = () => {
 
   // ── Handle New Chat action ─────────────────────────────────────────────────
   const handleNewChat = useCallback(() => {
-    localStorage.removeItem('conversation_id');
+    // Clear conversation ID, messages, and error; the effect will handle localStorage removal
     setConversationId(undefined);
     setMessages([]);
     setHistoryError(null);

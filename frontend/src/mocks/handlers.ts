@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw';
+import type { SendMessagePayload } from '../services/chatService';
 
 export const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -28,7 +29,7 @@ export const handlers = [
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     // Get the conversation_id from request if present, otherwise simulate a new conversation
-    const { message, conversation_id } = await request.json();
+    const { conversation_id } = await request.json() as SendMessagePayload;
     // For simplicity, we'll always return conversation_id 1 and increment message_id based on a static counter?
     // But we want to simulate persistence: if conversation_id is provided, we return the same conversation_id.
     // We'll use a static map for message IDs per conversation? For mock, we'll just return a fixed message_id.
@@ -59,7 +60,14 @@ export const handlers = [
   // Mock for fetching conversation history
   http.get(`${baseURL}/api/v1/chat/history/:conversationId`, ({ params }) => {
     const conversationId = Number(params.conversationId);
-    // Return a fixed set of messages for any conversationId for simplicity
+    // If the conversationId is not a positive integer, return an error to simulate failure
+    if (!Number.isInteger(conversationId) || conversationId <= 0) {
+      return new HttpResponse(
+        JSON.stringify({ error: 'Invalid conversation ID' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    // Return a fixed set of messages for any valid conversationId for simplicity
     // In a real test, we might want to vary based on conversationId, but we'll keep it simple.
     return HttpResponse.json({
       conversation_id: conversationId,

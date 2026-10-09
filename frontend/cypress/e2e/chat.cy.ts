@@ -45,7 +45,7 @@ describe('Chat Interface with Persistence', () => {
     cy.get('textarea[placeholder*="Ask your AI fitness coach"]').type('How should I workout?');
     cy.get('button[aria-label="Send message"]').click();
 
-    // MSW mock response will provide the text
+    // Wait for AI response to appear (accounting for animation/timing)
     cy.contains('Here is a mock response from the AI coach').should('be.visible');
 
     // Check for citations
@@ -56,7 +56,7 @@ describe('Chat Interface with Persistence', () => {
 
   it('should persist conversation ID and load history on refresh', () => {
     // Send a message to establish a conversation
-    cy.get('textarea[placeholder*="Ask your AI fitness coach"]').type('Hello AI');
+    cy.get('textarea[placeholder*="Ask your AI fitness coach"]').type('Hello, AI!');
     cy.get('button[aria-label="Send message"]').click();
 
     // Wait for the AI response
@@ -74,7 +74,8 @@ describe('Chat Interface with Persistence', () => {
 
     // After reload, the chat should load the history
     // We expect to see the user message and AI response from before
-    cy.contains('Hello AI').should('be.visible');
+    // Wait for content to stabilize after reload (animation/timing)
+    cy.contains('Hello, AI!').should('be.visible');
     cy.contains('Here is a mock response from the AI coach').should('be.visible');
 
     // Also, the conversation ID should still be in localStorage
@@ -92,32 +93,56 @@ describe('Chat Interface with Persistence', () => {
     // Wait for the AI response
     cy.contains('Here is a mock response from the AI coach').should('be.visible');
 
-    // Now, intercept the next POST request to check its payload
-    cy.intercept('POST', '**/api/v1/chat/message').as('sendMessage');
+    // Set up MSW handler override to capture the second request's body
+    let callCount = 0;
+    let capturedRequestBody = null;
+
+    cy.window().then(() => {
+      if (window.__MSW__) {
+        // Override with our capturing handler
+        window.__MSW__.worker.use(
+          window.__MSW__.http.post(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/chat/message`, async ({ request }) => {
+            callCount++;
+            const body = await request.json();
+
+            // Store body for verification (from the request we want to check)
+            if (callCount === 2) {
+              capturedRequestBody = body;
+            }
+
+            // Delegate to original handler to get normal response
+            return originalResolver({ request });
+          })
+        );
+      }
+    });
 
     // Send a second message
     cy.get('textarea[placeholder*="Ask your AI fitness coach"]').type('Second message');
     cy.get('button[aria-label="Send message"]').click();
 
-    // Wait for the request to be sent
-    cy.wait('@sendMessage').its('request.body').then((body) => {
-      // Expect the payload to contain the conversation ID (should be 1 from our mock)
-      expect(body.conversation_id).to.eq(1);
+    // Wait for the response to appear
+    cy.contains('This is a successful response.').should('be.visible');
+
+    // Verify that the request contains correct conversation ID and history
+    cy.wait(50); // Small delay to ensure capture is complete
+    cy.window().then(() => {
+      // Verify we captured the second request
+      expect(callCount).to.eq(2);
+      expect(capturedRequestBody).to.not.be.null;
+      expect(capturedRequestBody.conversation_id).to.eq(1);
       // Expect the history to contain the first turn (user message and AI response)
-      // Note: Our mock returns a fixed history, but we can check that the history array is present and has length 2
-      // In our actual implementation, the history sent would be the messages from the state before adding the new user message.
-      // Since we have one user message and one AI message in the state, we expect history length 2.
-      expect(body.history).to.be.an('array').that.has.lengthOf(2);
+      expect(capturedRequestBody.history).to.be.an('array').that.has.lengthOf(2);
       // Check the first history item is the user's first message
-      expect(body.history[0]).to.deep.equal({ role: 'user', content: 'First message' });
+      expect(capturedRequestBody.history[0]).to.deep.equal({ role: 'user', content: 'First message' });
       // Check the second history item is the AI's first response
-      expect(body.history[1]).to.deep.equal({ role: 'assistant', content: 'Here is a mock response from the AI coach. Based on my sources, you should make sure to lift heavy and eat protein.' });
+      expect(capturedRequestBody.history[1]).to.deep.equal({ role: 'assistant', content: 'Here is a mock response from the AI coach. Based on my sources, you should make sure to lift heavy and eat protein.' });
     });
   });
 
   it('should start a new conversation when New Chat is clicked', () => {
     // Send a message to establish a conversation
-    cy.get('textarea[placeholder*="Ask your AI fitness coach"]').type('Hello AI');
+    cy.get('textarea[placeholder*="Ask your AI fitness coach"]').type('Hello, AI!');
     cy.get('button[aria-label="Send message"]').click();
     cy.contains('Here is a mock response from the AI coach').should('be.visible');
 
@@ -138,13 +163,13 @@ describe('Chat Interface with Persistence', () => {
     cy.get('button[aria-label="Send message"]').click();
     cy.contains('Here is a mock response from the AI coach').should('be.visible');
     // The previous messages should not be visible
-    cy.contains('Hello AI').should('not.be.visible');
-    cy.contains('Hello AI from previous').should('not.be.visible'); // just to be sure
+    cy.contains('Hello, AI!').should('not.exist');
+    cy.contains('Hello, AI! from previous').should('not.exist'); // just to be sure
   });
 
   it('should clear conversation ID on logout', () => {
     // Send a message to establish a conversation
-    cy.get('textarea[placeholder*="Ask your AI fitness coach"]').type('Hello AI');
+    cy.get('textarea[placeholder*="Ask your AI fitness coach"]').type('Hello, AI!');
     cy.get('button[aria-label="Send message"]').click();
     cy.contains('Here is a mock response from the AI coach').should('be.visible');
 
@@ -176,7 +201,7 @@ describe('Chat Interface with Persistence', () => {
     cy.reload();
 
     // After reload, the chat should show an error message
-    cy.contains('Failed to load conversation history').should('be.visible');
+    cy.contains('I could not load your previous conversation history. Please try refreshing.').should('be.visible');
     // And provide a button to start a new chat
     cy.contains('button', 'Start New Chat').should('be.visible');
 
@@ -196,47 +221,73 @@ describe('Chat Interface with Persistence', () => {
   });
 
   it('should exclude UI-only error messages from conversation history', () => {
-    // First, set up an intercept to fail the first POST request
-    cy.intercept('POST', '**/api/v1/chat/message', { statusCode: 500 }).as('failMessage');
+    // Spy on the request body to verify history excludes UI-only errors
+    let callCount = 0;
+    let capturedRequestBody = null;
 
-    // Send a first message (which will fail)
+    // Override MSW handler to capture request and respond appropriately
+    cy.window().then(() => {
+      if (window.__MSW__) {
+        // Override with our capturing handler
+        window.__MSW__.worker.use(
+          window.__MSW__.http.post(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/chat/message`, async ({ request }) => {
+            callCount++;
+            const body = await request.json();
+
+            // Store body for later verification (from second call)
+            if (callCount === 2) {
+              capturedRequestBody = body;
+            }
+
+            // Simulate network failure on first call, success on second
+            if (callCount === 1) {
+              // First call - simulate network error
+              return new __MSW__.HttpResponse(
+                JSON.stringify({ error: 'Network error' }),
+                { status: 500, headers: { 'Content-Type': 'application/json' } }
+              );
+            } else {
+              // Second call - return success
+              return new __MSW__.HttpResponse(
+                JSON.stringify({
+                  conversation_id: 1,
+                  message_id: 2,
+                  response: 'This is a successful response.',
+                  citations: [],
+                  safety_tier: 'Safe',
+                }),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+              );
+            }
+          })
+        );
+      }
+    });
+
+    // Send a first message (which will fail due to our override)
     cy.get('textarea[placeholder*="Ask your AI fitness coach"]').type('First message');
     cy.get('button[aria-label="Send message"]').click();
 
-    // Wait for the failed request
-    cy.wait('@failMessage').its('response.statusCode').should('eq', 500);
-
-    // Check that the error message is visible
+    // Wait for the error message to appear
     cy.contains('I could not reach the AI service right now. Please check that the backend is running and try again.').should('be.visible');
-
-    // Now, set up an intercept for the next POST to succeed (we'll mock a successful response)
-    cy.intercept('POST', '**/api/v1/chat/message', (req) => {
-      // This will handle the next POST and any subsequent ones.
-      // We'll return a successful mock response.
-      req.reply({
-        statusCode: 200,
-        body: {
-          conversation_id: 1,
-          message_id: 2,
-          response: 'This is a successful response.',
-          citations: [],
-          safety_tier: 'Safe',
-        }
-      });
-    }).as('succeedMessage');
 
     // Send a second message
     cy.get('textarea[placeholder*="Ask your AI fitness coach"]').type('Second message');
     cy.get('button[aria-label="Send message"]').click();
 
-    // Wait for the successful request
-    cy.wait('@succeedMessage').its('request.body').then((body) => {
-      // Expect the payload to contain the conversation ID (should be 1)
-      expect(body.conversation_id).to.eq(1);
-      // Expect the history to contain only the first user message (the error message should be filtered out)
-      expect(body.history).to.be.an('array').that.has.lengthOf(1);
-      // Check the history item is the user's first message
-      expect(body.history[0]).to.deep.equal({ role: 'user', content: 'First message' });
+    // Wait for the successful response
+    cy.contains('This is a successful response.').should('be.visible');
+
+    // Verify that the second request's history excludes the UI-only error message
+    cy.wait(50); // Small delay to ensure capture is complete
+    cy.window().then((win) => {
+      // Verify we captured the second request
+      expect(callCount).to.eq(2);
+      expect(capturedRequestBody).to.not.be.null;
+      expect(capturedRequestBody.conversation_id).to.eq(1);
+      // The history should contain only the first user message (not the error message)
+      expect(capturedRequestBody.history).to.be.an('array').that.has.lengthOf(1);
+      expect(capturedRequestBody.history[0]).to.deep.equal({ role: 'user', content: 'First message' });
     });
   });
 });
