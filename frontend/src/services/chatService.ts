@@ -32,6 +32,7 @@ export interface BackendCitation {
 export interface SendMessagePayload {
   message: string;
   conversation_id?: number;
+  history: Array<{ role: string; content: string }>;
 }
 
 export interface SendMessageResponse {
@@ -45,6 +46,11 @@ export interface SendMessageResponse {
 export const chatService = {
   async sendMessage(payload: SendMessagePayload): Promise<SendMessageResponse> {
     const { data } = await api.post<SendMessageResponse>('/api/v1/chat/message', payload);
+    return data;
+  },
+
+  async getHistory(conversationId: number): Promise<{ conversation_id: number; messages: Array<{ id: number; role: string; content: string; created_at: string }> }> {
+    const { data } = await api.get(`/api/v1/chat/history/${conversationId}`);
     return data;
   },
 

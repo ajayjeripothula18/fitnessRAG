@@ -53,6 +53,7 @@ const EmptyChat: React.FC = () => (
   </div>
 );
 
+
 // ─── Chat Container ────────────────────────────────────────────────────────────
 const ChatContainer: React.FC = () => {
   const { user } = useAuthStore();
@@ -60,9 +61,55 @@ const ChatContainer: React.FC = () => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState<number | undefined>(undefined);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const userInitial = (user?.full_name || user?.email || 'U')[0].toUpperCase();
+
+  // ── Fetch conversation history ───────────────────────────────────────────────
+  const fetchConversationHistory = useCallback(async (id: number) => {
+    try {
+      const historyData = await chatService.getHistory(id);
+      // Map backend message format to frontend MessageData
+      const mappedMessages: MessageData[] = historyData.messages.map(msg => ({
+        id: String(msg.id),
+        role: msg.role,
+        content: msg.content,
+        timestamp: new Date(msg.created_at),
+      }));
+      setMessages(mappedMessages);
+      setHistoryError(null); // Clear any previous error
+    } catch (err) {
+      // If fetching history fails, set an error message and keep the conversation ID
+      console.warn('Failed to load conversation history', err);
+      setHistoryError('Failed to load conversation history. You can start a new chat or try again.');
+      // We do NOT clear the conversation ID or messages here.
+      // We keep the current state (which might be empty or from a previous attempt).
+    }
+  }, []);
+
+  // ── Load persisted conversation_id and fetch history on mount ─────────────────
+  useEffect(() => {
+    const persistedId = localStorage.getItem('conversation_id');
+    if (persistedId) {
+      const id = parseInt(persistedId, 10);
+      if (!isNaN(id)) {
+        setConversationId(id);
+        fetchConversationHistory(id);
+      }
+    }
+  }, [fetchConversationHistory]);
+
+  // ── Clear persisted conversation_id on logout/auth reset ───────────────────────
+  useEffect(() => {
+    if (!user) {
+      // User logged out, clear persisted conversation ID
+      localStorage.removeItem('conversation_id');
+      setConversationId(undefined);
+      setMessages([]);
+      setHistoryError(null);
+    }
+  }, [user]);
 
   // ── Scroll to bottom on new messages ──────────────────────────────────────
   useEffect(() => {
@@ -97,8 +144,16 @@ const ChatContainer: React.FC = () => {
       role: 'user',
       content: text,
       timestamp: new Date(),
+      isError: false,
     };
 
+    // Create history from current messages (excluding the current user message we are about to add)
+    // Also exclude UI-only error messages (marked with isError: true)
+    const historyToSend = messages
+      .filter(msg => !msg.isError)
+      .map(msg => ({ role: msg.role, content: msg.content }));
+
+    // Add the user message to the state optimistically
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
@@ -112,10 +167,14 @@ const ChatContainer: React.FC = () => {
       const result = await chatService.sendMessage({
         message: text,
         conversation_id: conversationId,
+        history: historyToSend,
       });
 
       // Persist conversation_id so the backend threads messages together
-      if (!conversationId) setConversationId(result.conversation_id);
+      if (!conversationId) {
+        setConversationId(result.conversation_id);
+        localStorage.setItem('conversation_id', String(result.conversation_id));
+      }
 
       const assistantMsg: MessageData = {
         id: String(result.message_id),
@@ -128,6 +187,7 @@ const ChatContainer: React.FC = () => {
           url: c.url
         })),
         safety_tier: result.safety_tier,
+        isError: false,
       };
       setMessages((prev) => [...prev, assistantMsg]);
     } catch {
@@ -137,12 +197,23 @@ const ChatContainer: React.FC = () => {
         content:
           'I could not reach the AI service right now. Please check that the backend is running and try again.',
         timestamp: new Date(),
+        isError: true,
       };
       setMessages((prev) => [...prev, errMsg]);
     } finally {
       setIsTyping(false);
     }
-  }, [input, isTyping, conversationId]);
+  }, [input, isTyping, conversationId, messages]); // Added messages to dependencies
+
+  // ── Handle New Chat action ─────────────────────────────────────────────────
+  const handleNewChat = useCallback(() => {
+    localStorage.removeItem('conversation_id');
+    setConversationId(undefined);
+    setMessages([]);
+    setHistoryError(null);
+    // Optionally, focus the input after clearing
+    textareaRef.current?.focus();
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -153,6 +224,18 @@ const ChatContainer: React.FC = () => {
 
   return (
     <section className="chat-layout" aria-label="AI Coach Chat">
+      {/* Header with New Chat button */}
+      <div className="chat-header flex items-center justify-between pb-4">
+        <h1 className="text-xl font-semibold">AI Fitness Coach</h1>
+        <button
+          className="btn btn-outline btn-sm"
+          onClick={handleNewChat}
+          aria-label="Start new conversation"
+        >
+          New Chat
+        </button>
+      </div>
+
       {/* Messages */}
       <div
         className="chat-messages"
@@ -161,12 +244,24 @@ const ChatContainer: React.FC = () => {
         aria-live="polite"
         aria-relevant="additions"
       >
-        {messages.length === 0 ? (
-          <EmptyChat />
+        {historyError ? (
+          <div className="p-4 text-center text-[var(--color-error)]">
+            {historyError}
+            <button
+              className="btn btn-outline btn-sm mt-2"
+              onClick={handleNewChat}
+            >
+              Start New Chat
+            </button>
+          </div>
         ) : (
-          messages.map((msg) => (
-            <ChatMessage key={msg.id} message={msg} userInitial={userInitial} />
-          ))
+          messages.length === 0 ? (
+            <EmptyChat />
+          ) : (
+            messages.map((msg) => (
+              <ChatMessage key={msg.id} message={msg} userInitial={userInitial} />
+            ))
+          )
         )}
         {isTyping && <TypingIndicator />}
         <div ref={messagesEndRef} aria-hidden="true" />
