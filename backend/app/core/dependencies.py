@@ -52,3 +52,47 @@ async def get_current_user_from_refresh_token(
     if user is None:
         raise credentials_exception
     return user
+
+
+async def get_ingestion_admin_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Dependency that verifies the current user is authorized for file ingestion.
+    Checks if the user's email is in the INGESTION_ADMIN_EMAILS allowlist.
+    """
+    # Normalize email for comparison (lowercase, strip whitespace)
+    normalized_email = current_user.email.lower().strip()
+
+    # Check if allowlist is configured and contains the user's email
+    allowed_emails = [
+        email.lower().strip() for email in settings.INGESTION_ADMIN_EMAILS
+    ]
+
+    if not allowed_emails:
+        # If allowlist is empty, deny by default
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Ingestion functionality is not configured. Contact administrator.",
+        )
+
+    if normalized_email not in allowed_emails:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is not authorized for file ingestion",
+        )
+
+    # Additionally check that user is active and verified
+    if not current_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is inactive",
+        )
+
+    if not current_user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User email is not verified",
+        )
+
+    return current_user
