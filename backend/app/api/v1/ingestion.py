@@ -171,4 +171,6 @@ async def upload_file(
             try:
                 os.unlink(temp_file_path)
             except OSError as e:
-                logger.warning(f"Failed to delete temporary file {temp_file_path}: {str(e)}")
+                logger.warning(
+                    f"Failed to delete temporary file {temp_file_path}: {str(e)}"
+                )

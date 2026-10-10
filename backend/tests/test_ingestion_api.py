@@ -53,7 +53,9 @@ def _bind_auth_dependency_override():
             if curr.side_effect is not None:
                 if isinstance(curr.side_effect, Exception):
                     raise curr.side_effect
-                if isinstance(curr.side_effect, type) and issubclass(curr.side_effect, Exception):
+                if isinstance(curr.side_effect, type) and issubclass(
+                    curr.side_effect, Exception
+                ):
                     raise curr.side_effect()
                 if callable(curr.side_effect):
                     res = curr.side_effect()
@@ -87,7 +89,6 @@ def mock_sync_session_provider():
         yield mock_session, mock_gen
 
 
-
 class TestIngestionAPI:
     """Test the file ingestion API endpoint."""
 
@@ -102,7 +103,7 @@ class TestIngestionAPI:
             file = UploadFile(
                 filename="test.txt",
                 file=io.BytesIO(file_content),
-                headers={"content-type": "text/plain"}
+                headers={"content-type": "text/plain"},
             )
 
             # Make the request
@@ -179,9 +180,9 @@ class TestIngestionAPI:
         with patch("app.core.dependencies.get_ingestion_admin_user") as mock_auth:
             # Make the dependency raise an HTTPException for unauthorized access
             from fastapi import HTTPException
+
             mock_auth.side_effect = HTTPException(
-                status_code=403,
-                detail="User is not authorized for file ingestion"
+                status_code=403, detail="User is not authorized for file ingestion"
             )
 
             file_content = b"test content"
@@ -203,9 +204,9 @@ class TestIngestionAPI:
 
         with patch("app.core.dependencies.get_ingestion_admin_user") as mock_auth:
             from fastapi import HTTPException
+
             mock_auth.side_effect = HTTPException(
-                status_code=403,
-                detail="User account is inactive"
+                status_code=403, detail="User account is inactive"
             )
 
             file_content = b"test content"
@@ -227,9 +228,9 @@ class TestIngestionAPI:
 
         with patch("app.core.dependencies.get_ingestion_admin_user") as mock_auth:
             from fastapi import HTTPException
+
             mock_auth.side_effect = HTTPException(
-                status_code=403,
-                detail="User email is not verified"
+                status_code=403, detail="User email is not verified"
             )
 
             file_content = b"test content"
@@ -251,9 +252,10 @@ class TestIngestionAPI:
 
         with patch("app.core.dependencies.get_ingestion_admin_user") as mock_auth:
             from fastapi import HTTPException
+
             mock_auth.side_effect = HTTPException(
                 status_code=403,
-                detail="Ingestion functionality is not configured. Contact administrator."
+                detail="Ingestion functionality is not configured. Contact administrator.",
             )
 
             file_content = b"test content"
@@ -293,7 +295,7 @@ class TestIngestionAPI:
     def test_ingest_invalid_utf8(self, client, mock_auth_dependency):
         """Test rejection of invalid UTF-8 content."""
         # Create invalid UTF-8 bytes
-        invalid_utf8 = b'\xff\xfe\xfd'  # Invalid UTF-8 sequence
+        invalid_utf8 = b"\xff\xfe\xfd"  # Invalid UTF-8 sequence
 
         response = client.post(
             "/api/v1/ingestion/file",
@@ -301,7 +303,10 @@ class TestIngestionAPI:
         )
 
         assert response.status_code == 415  # Unsupported Media Type
-        assert "utf-8" in response.json()["detail"].lower() or "invalid" in response.json()["detail"].lower()
+        assert (
+            "utf-8" in response.json()["detail"].lower()
+            or "invalid" in response.json()["detail"].lower()
+        )
 
     def test_ingest_service_unavailable(self, client, mock_auth_dependency):
         """Test handling of ingestion service failures."""
@@ -346,7 +351,9 @@ class TestIngestionAPI:
 
         assert response.status_code == 413  # Request Entity Too Large
 
-    def test_ingest_valid_file_at_limit(self, client: TestClient, mock_auth_dependency: MagicMock) -> None:
+    def test_ingest_valid_file_at_limit(
+        self, client: TestClient, mock_auth_dependency: MagicMock
+    ) -> None:
         """Test that a file exactly at the 5 MiB limit is accepted."""
         with patch("app.services.ingestion.ingest_file") as mock_ingest:
             mock_ingest.return_value = 1
@@ -364,7 +371,9 @@ class TestIngestionAPI:
             assert data["chunks_ingested"] == 1
             mock_ingest.assert_called_once()
 
-    def test_ingest_request_too_large_rejected_before_parsing(self, client: TestClient) -> None:
+    def test_ingest_request_too_large_rejected_before_parsing(
+        self, client: TestClient
+    ) -> None:
         """Test that requests exceeding the body limit are rejected before multipart parsing."""
         # Create a request that exceeds our 6 MiB limit (5 MiB file + multipart overhead)
         # We'll send a raw POST with excessive body to test the middleware
@@ -380,14 +389,16 @@ class TestIngestionAPI:
         response = client.post(
             "/api/v1/ingestion/file",
             content=excessive_content,
-            headers={"Content-Type": "application/octet-stream"}
+            headers={"Content-Type": "application/octet-stream"},
         )
 
         # Should be rejected with 413 before reaching our endpoint
         assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
         assert "too large" in response.text.lower()
 
-    def test_ingest_request_body_limit_with_missing_content_length(self, client: TestClient) -> None:
+    def test_ingest_request_body_limit_with_missing_content_length(
+        self, client: TestClient
+    ) -> None:
         """Test that the body limit works even when Content-Length is missing."""
         # Create a body that exceeds the limit
         excessive_content = b"x" * (7 * 1024 * 1024)  # 7 MB
@@ -400,13 +411,15 @@ class TestIngestionAPI:
                 # No Content-Length header, or incorrect one
                 "Content-Type": "application/octet-stream"
                 # Intentionally omitting Content-Length
-            }
+            },
         )
 
         # Should still be rejected based on actual body size
         assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
 
-    def test_ingest_request_body_limit_with_misleading_content_length(self, client: TestClient) -> None:
+    def test_ingest_request_body_limit_with_misleading_content_length(
+        self, client: TestClient
+    ) -> None:
         """Test that a misleadingly small Content-Length cannot bypass the limit."""
         # Create a body that exceeds the limit
         excessive_content = b"x" * (7 * 1024 * 1024)  # 7 MB
@@ -417,14 +430,16 @@ class TestIngestionAPI:
             content=excessive_content,
             headers={
                 "Content-Type": "application/octet-stream",
-                "Content-Length": "100"  # Claim only 100 bytes
-            }
+                "Content-Length": "100",  # Claim only 100 bytes
+            },
         )
 
         # Should still be rejected based on actual body size, not the header
         assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
 
-    def test_ingest_other_endpoints_unaffected_by_limit(self, client: TestClient) -> None:
+    def test_ingest_other_endpoints_unaffected_by_limit(
+        self, client: TestClient
+    ) -> None:
         """Test that other endpoints are not affected by the ingestion body limit."""
         # Test that a normal endpoint (like health check) still works
         response = client.get("/health")
@@ -432,11 +447,15 @@ class TestIngestionAPI:
 
         # Test that auth endpoint still works (would need proper auth, but at least
         # the middleware shouldn't interfere with the request reaching the endpoint)
-        response = client.post("/api/v1/auth/login", json={"email": "test@test.com", "password": "wrong"})
+        response = client.post(
+            "/api/v1/auth/login", json={"email": "test@test.com", "password": "wrong"}
+        )
         # Should get 401 (unauthorized) or 422 (validation error), not 413 (payload too large)
         assert response.status_code != status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
 
-    def test_ingest_rejects_prefix_matching_mime_type(self, client: TestClient, mock_auth_dependency: MagicMock) -> None:
+    def test_ingest_rejects_prefix_matching_mime_type(
+        self, client: TestClient, mock_auth_dependency: MagicMock
+    ) -> None:
         """Test rejection of MIME types that merely start with expected type (e.g. text/plain-malicious)."""
         file_content = b"valid text content"
         response = client.post(
@@ -446,7 +465,9 @@ class TestIngestionAPI:
         assert response.status_code == status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
         assert "not allowed" in response.json()["detail"].lower()
 
-    def test_ingest_accepts_mime_type_with_charset(self, client: TestClient, mock_auth_dependency: MagicMock) -> None:
+    def test_ingest_accepts_mime_type_with_charset(
+        self, client: TestClient, mock_auth_dependency: MagicMock
+    ) -> None:
         """Test acceptance of MIME types with valid parameters like charset=utf-8."""
         with patch("app.services.ingestion.ingest_file") as mock_ingest:
             mock_ingest.return_value = 1
@@ -495,8 +516,9 @@ class TestIngestionAPI:
             created_temp_files.append(tf)
             return tf
 
-        with patch("tempfile.NamedTemporaryFile", side_effect=tracking_temp_file), \
-             patch("app.services.ingestion.ingest_file") as mock_ingest:
+        with patch(
+            "tempfile.NamedTemporaryFile", side_effect=tracking_temp_file
+        ), patch("app.services.ingestion.ingest_file") as mock_ingest:
             mock_ingest.side_effect = RuntimeError("Embedding failure")
 
             file_content = b"valid file content"
@@ -525,8 +547,9 @@ class TestIngestionAPI:
             finally:
                 generator_closed = True
 
-        with patch("app.api.v1.ingestion.get_sync_session", side_effect=test_generator), \
-             patch("app.services.ingestion.ingest_file") as mock_ingest:
+        with patch(
+            "app.api.v1.ingestion.get_sync_session", side_effect=test_generator
+        ), patch("app.services.ingestion.ingest_file") as mock_ingest:
             mock_ingest.return_value = 2
             file_content = b"hello world"
             response = client.post(
@@ -551,8 +574,9 @@ class TestIngestionAPI:
             finally:
                 generator_closed = True
 
-        with patch("app.api.v1.ingestion.get_sync_session", side_effect=test_generator), \
-             patch("app.services.ingestion.ingest_file") as mock_ingest:
+        with patch(
+            "app.api.v1.ingestion.get_sync_session", side_effect=test_generator
+        ), patch("app.services.ingestion.ingest_file") as mock_ingest:
             mock_ingest.side_effect = ValueError("Corrupt file")
             file_content = b"hello world"
             response = client.post(
@@ -572,8 +596,9 @@ class TestIngestionAPI:
         mock_gen_success = MagicMock()
         mock_gen_success.__next__.return_value = mock_session_success
 
-        with patch("app.api.v1.ingestion.get_sync_session", return_value=mock_gen_success), \
-             patch("app.services.ingestion.ingest_file") as mock_ingest:
+        with patch(
+            "app.api.v1.ingestion.get_sync_session", return_value=mock_gen_success
+        ), patch("app.services.ingestion.ingest_file") as mock_ingest:
             mock_ingest.return_value = 1
             response = client.post(
                 "/api/v1/ingestion/file",
@@ -589,8 +614,9 @@ class TestIngestionAPI:
         mock_gen_failure = MagicMock()
         mock_gen_failure.__next__.return_value = mock_session_failure
 
-        with patch("app.api.v1.ingestion.get_sync_session", return_value=mock_gen_failure), \
-             patch("app.services.ingestion.ingest_file") as mock_ingest:
+        with patch(
+            "app.api.v1.ingestion.get_sync_session", return_value=mock_gen_failure
+        ), patch("app.services.ingestion.ingest_file") as mock_ingest:
             mock_ingest.side_effect = Exception("DB error")
             response = client.post(
                 "/api/v1/ingestion/file",

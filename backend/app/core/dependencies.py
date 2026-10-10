@@ -65,7 +65,9 @@ async def get_ingestion_admin_user(
     normalized_email = current_user.email.lower().strip()
 
     # Check if allowlist is configured and contains the user's email
-    allowed_emails = [email.lower().strip() for email in settings.INGESTION_ADMIN_EMAILS]
+    allowed_emails = [
+        email.lower().strip() for email in settings.INGESTION_ADMIN_EMAILS
+    ]
 
     if not allowed_emails:
         # If allowlist is empty, deny by default

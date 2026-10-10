@@ -52,15 +52,19 @@ class RecordingASGIApp:
                 return
 
         self.executed = True
-        await send({
-            "type": "http.response.start",
-            "status": self.response_status,
-            "headers": [[b"content-type", b"text/plain"]],
-        })
-        await send({
-            "type": "http.response.body",
-            "body": self.response_body,
-        })
+        await send(
+            {
+                "type": "http.response.start",
+                "status": self.response_status,
+                "headers": [[b"content-type", b"text/plain"]],
+            }
+        )
+        await send(
+            {
+                "type": "http.response.body",
+                "body": self.response_body,
+            }
+        )
 
 
 def make_receive(messages: List[Message]) -> Receive:
@@ -135,11 +139,13 @@ async def test_middleware_forwards_chunks_incrementally():
     chunk2 = b"y" * (2 * 1024 * 1024)  # 2 MiB
     chunk3 = b"z" * (1 * 1024 * 1024)  # 1 MiB
 
-    receive = make_receive([
-        {"type": "http.request", "body": chunk1, "more_body": True},
-        {"type": "http.request", "body": chunk2, "more_body": True},
-        {"type": "http.request", "body": chunk3, "more_body": False},
-    ])
+    receive = make_receive(
+        [
+            {"type": "http.request", "body": chunk1, "more_body": True},
+            {"type": "http.request", "body": chunk2, "more_body": True},
+            {"type": "http.request", "body": chunk3, "more_body": False},
+        ]
+    )
     sent_messages = []
 
     async def send(message):
@@ -214,10 +220,12 @@ async def test_middleware_rejects_chunked_request_crossing_limit():
     chunk1 = b"a" * (4 * 1024 * 1024)  # 4 MiB (under limit)
     chunk2 = b"b" * (3 * 1024 * 1024)  # 3 MiB (crosses 6 MiB limit)
 
-    receive = make_receive([
-        {"type": "http.request", "body": chunk1, "more_body": True},
-        {"type": "http.request", "body": chunk2, "more_body": False},
-    ])
+    receive = make_receive(
+        [
+            {"type": "http.request", "body": chunk1, "more_body": True},
+            {"type": "http.request", "body": chunk2, "more_body": False},
+        ]
+    )
     sent_messages = []
 
     async def send(message):
@@ -382,7 +390,9 @@ async def test_middleware_misleading_content_length_header():
     )
 
     small_body = b"y" * (2 * 1024 * 1024)
-    receive_small = make_receive([{"type": "http.request", "body": small_body, "more_body": False}])
+    receive_small = make_receive(
+        [{"type": "http.request", "body": small_body, "more_body": False}]
+    )
     sent_messages_small = []
 
     async def send_small(message):
@@ -437,7 +447,9 @@ async def test_middleware_handles_missing_content_length():
     )
 
     small_body = b"y" * (2 * 1024 * 1024)
-    receive_small = make_receive([{"type": "http.request", "body": small_body, "more_body": False}])
+    receive_small = make_receive(
+        [{"type": "http.request", "body": small_body, "more_body": False}]
+    )
     sent_messages_small = []
 
     async def send_small(message):
@@ -582,10 +594,12 @@ async def test_middleware_handles_disconnect_during_chunked_stream():
     )
 
     chunk = b"a" * (2 * 1024 * 1024)  # 2 MiB
-    receive = make_receive([
-        {"type": "http.request", "body": chunk, "more_body": True},
-        {"type": "http.disconnect"},
-    ])
+    receive = make_receive(
+        [
+            {"type": "http.request", "body": chunk, "more_body": True},
+            {"type": "http.disconnect"},
+        ]
+    )
     sent_messages = []
 
     async def send(message):
@@ -618,11 +632,13 @@ async def test_middleware_handles_request_completion_with_empty_final_chunk():
     chunk1 = b"hello "
     chunk2 = b"world"
 
-    receive = make_receive([
-        {"type": "http.request", "body": chunk1, "more_body": True},
-        {"type": "http.request", "body": chunk2, "more_body": True},
-        {"type": "http.request", "body": b"", "more_body": False},
-    ])
+    receive = make_receive(
+        [
+            {"type": "http.request", "body": chunk1, "more_body": True},
+            {"type": "http.request", "body": chunk2, "more_body": True},
+            {"type": "http.request", "body": b"", "more_body": False},
+        ]
+    )
     sent_messages = []
 
     async def send(message):
@@ -652,13 +668,16 @@ async def test_middleware_reraises_when_response_already_started():
     - The exception propagates to the caller.
     - No duplicate or malformed ASGI response messages are emitted.
     """
+
     async def early_response_app(scope: Scope, receive: Receive, send: Send):
         # Downstream app starts sending response headers before consuming request body
-        await send({
-            "type": "http.response.start",
-            "status": 200,
-            "headers": [[b"content-type", b"text/plain"]],
-        })
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain"]],
+            }
+        )
         # Next receive call will encounter an over-limit payload
         await receive()
 
@@ -697,17 +716,20 @@ async def test_middleware_reraises_when_response_already_started_chunked():
     - PayloadTooLargeException propagates to caller.
     - Only the application's initial response message was emitted.
     """
+
     async def streaming_app(scope: Scope, receive: Receive, send: Send):
         # Read first chunk
         chunk1 = await receive()
         assert chunk1["type"] == "http.request"
 
         # Start response early
-        await send({
-            "type": "http.response.start",
-            "status": 200,
-            "headers": [[b"content-type", b"text/plain"]],
-        })
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain"]],
+            }
+        )
 
         # Read next chunk which crosses the limit
         await receive()
@@ -718,10 +740,12 @@ async def test_middleware_reraises_when_response_already_started_chunked():
 
     chunk1 = b"a" * (4 * 1024 * 1024)  # 4 MiB (under limit)
     chunk2 = b"b" * (3 * 1024 * 1024)  # 3 MiB (crosses 6 MiB limit)
-    receive = make_receive([
-        {"type": "http.request", "body": chunk1, "more_body": True},
-        {"type": "http.request", "body": chunk2, "more_body": False},
-    ])
+    receive = make_receive(
+        [
+            {"type": "http.request", "body": chunk1, "more_body": True},
+            {"type": "http.request", "body": chunk2, "more_body": False},
+        ]
+    )
     sent_messages = []
 
     async def send(message):

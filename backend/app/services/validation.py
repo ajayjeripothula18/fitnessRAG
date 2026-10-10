@@ -62,7 +62,7 @@ def validate_file_content(file_path: str) -> Tuple[bool, str]:
         Tuple of (is_valid, error_message)
     """
     try:
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             chunk_size = 8192  # 8KB chunks
             # UTF-8 decoder state - we'll keep track of incomplete bytes
             # UTF-8 can have 1-4 byte characters
@@ -78,14 +78,14 @@ def validate_file_content(file_path: str) -> Tuple[bool, str]:
 
                 try:
                     # Try to decode the combined data
-                    data.decode('utf-8', errors='strict')
+                    data.decode("utf-8", errors="strict")
                     # If successful, there are no leftover bytes
                     leftover_bytes = b""
                 except UnicodeDecodeError as e:
                     # If we have a UnicodeDecodeError, check if it's due to incomplete character
-                    if e.reason == 'unexpected end of data':
+                    if e.reason == "unexpected end of data":
                         # Keep the bytes that couldn't be decoded for the next chunk
-                        leftover_bytes = data[e.start:]
+                        leftover_bytes = data[e.start :]
                     else:
                         # Invalid UTF-8 sequence
                         return False, "File is not valid UTF-8 text"

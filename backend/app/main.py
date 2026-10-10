@@ -28,7 +28,7 @@ app.add_middleware(SafetyGatewayMiddleware)  # type: ignore[arg-type, call-arg]
 app.add_middleware(
     RequestBodyLimitMiddleware,
     max_size=6 * 1024 * 1024,  # 6 MiB
-    target_paths=["/api/v1/ingestion/file"]
+    target_paths=["/api/v1/ingestion/file"],
 )  # type: ignore[arg-type, call-arg]
 
 # Include routers

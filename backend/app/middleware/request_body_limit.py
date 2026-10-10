@@ -8,6 +8,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 class PayloadTooLargeException(Exception):
     """Exception raised when request body exceeds the size limit."""
+
     pass
 
 
@@ -76,7 +77,9 @@ class RequestBodyLimitMiddleware:
                 return True
         return False
 
-    async def _enforce_body_limit(self, scope: Scope, receive: Receive, send: Send) -> None:
+    async def _enforce_body_limit(
+        self, scope: Scope, receive: Receive, send: Send
+    ) -> None:
         """
         Enforce the body size limit by processing incoming messages incrementally.
 
@@ -124,17 +127,21 @@ class RequestBodyLimitMiddleware:
             # Handle the payload too large exception
             if not response_started:
                 # If response hasn't started yet, we can send a 413 response
-                await send({
-                    "type": "http.response.start",
-                    "status": 413,
-                    "headers": [
-                        [b"content-type", b"text/plain"],
-                    ],
-                })
-                await send({
-                    "type": "http.response.body",
-                    "body": b"Payload too large",
-                })
+                await send(
+                    {
+                        "type": "http.response.start",
+                        "status": 413,
+                        "headers": [
+                            [b"content-type", b"text/plain"],
+                        ],
+                    }
+                )
+                await send(
+                    {
+                        "type": "http.response.body",
+                        "body": b"Payload too large",
+                    }
+                )
                 return
             # If response has already started, we cannot send another response start.
             # Re-raise so the server or caller can handle the connection failure
