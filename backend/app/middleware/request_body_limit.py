@@ -3,7 +3,7 @@ Pure ASGI request body size limit middleware to prevent disk exhaustion.
 Applies size limit before multipart parsing for specific routes.
 """
 from typing import List
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
 class PayloadTooLargeException(Exception):
@@ -91,7 +91,7 @@ class RequestBodyLimitMiddleware:
         total_body_size = 0
         response_started = False
 
-        async def wrapped_receive() -> dict:
+        async def wrapped_receive() -> Message:
             """Wrap receive to count body bytes and enforce limits."""
             nonlocal total_body_size
             message = await receive()
@@ -113,7 +113,7 @@ class RequestBodyLimitMiddleware:
                 # For non-body messages, return as-is
                 return message
 
-        async def send_wrapper(message: dict) -> None:
+        async def send_wrapper(message: Message) -> None:
             """Wrap send to track when response has started."""
             nonlocal response_started
             if message["type"] == "http.response.start":
