@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.v1 import auth, chat, users
+from app.api.v1 import auth, chat, users, ingestion
 from app.middleware.safety import SafetyGatewayMiddleware
+from app.middleware.request_body_limit import RequestBodyLimitMiddleware
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -22,10 +23,19 @@ app.add_middleware(
 # Add safety gateway middleware
 app.add_middleware(SafetyGatewayMiddleware)  # type: ignore[arg-type, call-arg]
 
+# Add request body limit middleware for ingestion endpoint (5 MiB + multipart overhead)
+# Allow up to 6 MiB total to account for multipart form data overhead
+app.add_middleware(
+    RequestBodyLimitMiddleware,
+    max_size=6 * 1024 * 1024,  # 6 MiB
+    target_paths=["/api/v1/ingestion/file"]
+)  # type: ignore[arg-type, call-arg]
+
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
+app.include_router(ingestion.router, prefix="/api/v1/ingestion", tags=["ingestion"])
 
 
 @app.get("/health")

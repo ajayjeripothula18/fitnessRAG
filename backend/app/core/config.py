@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     OLLAMA_EMBEDDING_MODEL: str = Field(...)
     OLLAMA_TIMEOUT: float = Field(default=5.0)
 
+    # Ingestion
+    INGESTION_ADMIN_EMAILS: List[str] = Field(default_factory=list)
+    INGESTION_MAX_FILE_SIZE: int = Field(default=5 * 1024 * 1024)  # 5 MiB
+    INGESTION_ALLOWED_EXTENSIONS: set[str] = Field(default={".txt", ".md", ".csv"})
+
     @model_validator(mode="after")
     def validate_llm_config(self) -> "Settings":
         if not self.OPENAI_API_KEY and not self.OLLAMA_BASE_URL:

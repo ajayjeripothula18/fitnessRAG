@@ -20,6 +20,7 @@ const RegisterPage  = lazy(() => import('./pages/RegisterPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ChatPage      = lazy(() => import('./pages/ChatPage'));
 const ProfilePage   = lazy(() => import('./pages/ProfilePage'));
+const KnowledgePage = lazy(() => import('./pages/KnowledgePage'));
 
 // ─── Query Client ─────────────────────────────────────────────────────────────
 const queryClient = new QueryClient({
@@ -74,6 +75,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <ChatPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/knowledge"
+                element={
+                  <ProtectedRoute>
+                    <KnowledgePage />
                   </ProtectedRoute>
                 }
               />
