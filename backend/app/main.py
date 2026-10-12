@@ -20,16 +20,18 @@ app.add_middleware(
     allow_headers=["*"],  # type: ignore[call-arg]
 )
 
-# Add safety gateway middleware
-app.add_middleware(SafetyGatewayMiddleware)  # type: ignore[arg-type, call-arg]
-
 # Add request body limit middleware for ingestion endpoint (5 MiB + multipart overhead)
 # Allow up to 6 MiB total to account for multipart form data overhead
+# MUST be added before SafetyGatewayMiddleware so it runs closer to the app,
+# preventing BaseHTTPMiddleware from intercepting and corrupting BaseExceptions.
 app.add_middleware(
     RequestBodyLimitMiddleware,
     max_size=6 * 1024 * 1024,  # 6 MiB
     target_paths=["/api/v1/ingestion/file"],
 )  # type: ignore[arg-type, call-arg]
+
+# Add safety gateway middleware (Outer middleware)
+app.add_middleware(SafetyGatewayMiddleware)  # type: ignore[arg-type, call-arg]
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])

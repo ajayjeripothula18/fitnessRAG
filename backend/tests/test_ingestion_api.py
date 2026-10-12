@@ -3,17 +3,16 @@ Tests for the file ingestion API endpoint.
 """
 from __future__ import annotations
 
-import io
 import os
 import tempfile
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi import status, UploadFile
+from fastapi import status
 from fastapi.testclient import TestClient
+from starlette.types import Message
 
 from app.main import app
-from app.core.config import settings
 
 
 @pytest.fixture
@@ -100,11 +99,6 @@ class TestIngestionAPI:
 
             # Create a test file
             file_content = b"This is a test file content."
-            file = UploadFile(
-                filename="test.txt",
-                file=io.BytesIO(file_content),
-                headers={"content-type": "text/plain"},
-            )
 
             # Make the request
             response = client.post(
@@ -371,71 +365,140 @@ class TestIngestionAPI:
             assert data["chunks_ingested"] == 1
             mock_ingest.assert_called_once()
 
-    def test_ingest_request_too_large_rejected_before_parsing(
-        self, client: TestClient
+    @pytest.mark.asyncio
+    async def test_ingest_request_too_large_rejected_before_parsing(
+        self, mock_auth_dependency: MagicMock
     ) -> None:
         """Test that requests exceeding the body limit are rejected before multipart parsing."""
-        # Create a request that exceeds our 6 MiB limit (5 MiB file + multipart overhead)
-        # We'll send a raw POST with excessive body to test the middleware
-        excessive_content = b"x" * (7 * 1024 * 1024)  # 7 MB, exceeds our 6 MiB limit
-
-        # We need to simulate a multipart request, but for simplicity we'll test
-        # that excessively large bodies are rejected. In a real test, we'd craft
-        # a proper multipart body, but the middleware should catch it either way.
-
-        # For this test, we'll send a raw body that's too large
-        # Note: This test might need adjustment based on how Starlette handles
-        # non-multipart POSTs to this endpoint, but the principle is the same
-        response = client.post(
-            "/api/v1/ingestion/file",
-            content=excessive_content,
-            headers={"Content-Type": "application/octet-stream"},
+        boundary = b"boundary123"
+        body = (
+            b"--" + boundary + b"\r\n"
+            b'Content-Disposition: form-data; name="file"; filename="test.txt"\r\n'
+            b"Content-Type: text/plain\r\n\r\n"
+            + (b"x" * (7 * 1024 * 1024))
+            + b"\r\n--"
+            + boundary
+            + b"--\r\n"
         )
 
-        # Should be rejected with 413 before reaching our endpoint
-        assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
-        assert "too large" in response.text.lower()
+        messages = [{"type": "http.request", "body": body, "more_body": False}]
+        iterator = iter(messages)
 
-    def test_ingest_request_body_limit_with_missing_content_length(
-        self, client: TestClient
+        async def receive() -> Message:
+            return next(iterator)
+
+        sent_messages = []
+
+        async def send(message: Message) -> None:
+            sent_messages.append(message)
+
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/v1/ingestion/file",
+            "headers": [
+                (b"content-type", b"multipart/form-data; boundary=" + boundary),
+                (b"content-length", str(len(body)).encode("utf-8")),
+            ],
+        }
+
+        from app.main import app
+
+        await app(scope, receive, send)
+
+        assert len(sent_messages) > 0
+        assert sent_messages[0]["type"] == "http.response.start"
+        assert sent_messages[0]["status"] == 413
+
+    @pytest.mark.asyncio
+    async def test_ingest_request_body_limit_with_missing_content_length(
+        self, mock_auth_dependency: MagicMock
     ) -> None:
         """Test that the body limit works even when Content-Length is missing."""
-        # Create a body that exceeds the limit
-        excessive_content = b"x" * (7 * 1024 * 1024)  # 7 MB
-
-        # Send without Content-Length header (or with incorrect one)
-        response = client.post(
-            "/api/v1/ingestion/file",
-            content=excessive_content,
-            headers={
-                # No Content-Length header, or incorrect one
-                "Content-Type": "application/octet-stream"
-                # Intentionally omitting Content-Length
-            },
+        boundary = b"boundary123"
+        body = (
+            b"--" + boundary + b"\r\n"
+            b'Content-Disposition: form-data; name="file"; filename="test.txt"\r\n'
+            b"Content-Type: text/plain\r\n\r\n"
+            + (b"x" * (7 * 1024 * 1024))
+            + b"\r\n--"
+            + boundary
+            + b"--\r\n"
         )
 
-        # Should still be rejected based on actual body size
-        assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+        messages = [{"type": "http.request", "body": body, "more_body": False}]
+        iterator = iter(messages)
 
-    def test_ingest_request_body_limit_with_misleading_content_length(
-        self, client: TestClient
+        async def receive() -> Message:
+            return next(iterator)
+
+        sent_messages = []
+
+        async def send(message: Message) -> None:
+            sent_messages.append(message)
+
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/v1/ingestion/file",
+            "headers": [
+                (b"content-type", b"multipart/form-data; boundary=" + boundary),
+                # No content-length header
+            ],
+        }
+
+        from app.main import app
+
+        await app(scope, receive, send)
+
+        assert len(sent_messages) > 0
+        assert sent_messages[0]["type"] == "http.response.start"
+        assert sent_messages[0]["status"] == 413
+
+    @pytest.mark.asyncio
+    async def test_ingest_request_body_limit_with_misleading_content_length(
+        self, mock_auth_dependency: MagicMock
     ) -> None:
         """Test that a misleadingly small Content-Length cannot bypass the limit."""
-        # Create a body that exceeds the limit
-        excessive_content = b"x" * (7 * 1024 * 1024)  # 7 MB
-
-        # Send with a misleadingly small Content-Length
-        response = client.post(
-            "/api/v1/ingestion/file",
-            content=excessive_content,
-            headers={
-                "Content-Type": "application/octet-stream",
-                "Content-Length": "100",  # Claim only 100 bytes
-            },
+        boundary = b"boundary123"
+        body = (
+            b"--" + boundary + b"\r\n"
+            b'Content-Disposition: form-data; name="file"; filename="test.txt"\r\n'
+            b"Content-Type: text/plain\r\n\r\n"
+            + (b"x" * (7 * 1024 * 1024))
+            + b"\r\n--"
+            + boundary
+            + b"--\r\n"
         )
 
-        # Should still be rejected based on actual body size, not the header
-        assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+        messages = [{"type": "http.request", "body": body, "more_body": False}]
+        iterator = iter(messages)
+
+        async def receive() -> Message:
+            return next(iterator)
+
+        sent_messages = []
+
+        async def send(message: Message) -> None:
+            sent_messages.append(message)
+
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/v1/ingestion/file",
+            "headers": [
+                (b"content-type", b"multipart/form-data; boundary=" + boundary),
+                (b"content-length", b"100"),  # Misleading length
+            ],
+        }
+
+        from app.main import app
+
+        await app(scope, receive, send)
+
+        assert len(sent_messages) > 0
+        assert sent_messages[0]["type"] == "http.response.start"
+        assert sent_messages[0]["status"] == 413
 
     def test_ingest_other_endpoints_unaffected_by_limit(
         self, client: TestClient

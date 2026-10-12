@@ -1,6 +1,7 @@
 """
 Tests for RequestBodyLimitMiddleware.
 """
+import asyncio
 from typing import List
 import pytest
 from starlette.types import Message, Receive, Scope, Send
@@ -80,8 +81,16 @@ def make_receive(messages: List[Message]) -> Receive:
 
 
 def test_exception_type_is_production_class():
-    """Verify that PayloadTooLargeException is the real production exception."""
-    assert issubclass(PayloadTooLargeException, Exception)
+    """
+    Verify that PayloadTooLargeException is the real production exception.
+    It must inherit from BaseException but NOT from Exception. This distinction
+    is essential because FastAPI/Starlette's MultiPartParser catches and
+    swallows standard Exceptions, preventing them from propagating up to
+    the middleware. Inheriting directly from BaseException ensures the error
+    propagates reliably.
+    """
+    assert issubclass(PayloadTooLargeException, BaseException)
+    assert not issubclass(PayloadTooLargeException, Exception)
 
 
 def test_middleware_default_target_paths():
@@ -764,3 +773,134 @@ async def test_middleware_reraises_when_response_already_started_chunked():
     assert len(sent_messages) == 1
     assert sent_messages[0]["type"] == "http.response.start"
     assert sent_messages[0]["status"] == 200
+
+
+@pytest.mark.asyncio
+async def test_exception_group_single_payload_limit():
+    """Verify that a single payload-limit exception wrapped in an ExceptionGroup produces HTTP 413."""
+
+    async def app_raises(scope, receive, send):
+        raise BaseExceptionGroup("group", [PayloadTooLargeException()])
+
+    middleware = RequestBodyLimitMiddleware(
+        app_raises, max_size=MAX_SIZE, target_paths=[TARGET_PATH]
+    )
+    receive = make_receive([])
+    sent_messages = []
+
+    async def send(message):
+        sent_messages.append(message)
+
+    scope = {"type": "http", "method": "POST", "path": TARGET_PATH}
+
+    await middleware(scope, receive, send)
+
+    assert len(sent_messages) == 2
+    assert sent_messages[0]["status"] == 413
+
+
+@pytest.mark.asyncio
+async def test_exception_group_multiple_payload_limits():
+    """Verify that a group containing only payload-limit exceptions produces HTTP 413."""
+
+    async def app_raises(scope, receive, send):
+        raise BaseExceptionGroup(
+            "group", [PayloadTooLargeException(), PayloadTooLargeException()]
+        )
+
+    middleware = RequestBodyLimitMiddleware(
+        app_raises, max_size=MAX_SIZE, target_paths=[TARGET_PATH]
+    )
+    receive = make_receive([])
+    sent_messages = []
+
+    async def send(message):
+        sent_messages.append(message)
+
+    scope = {"type": "http", "method": "POST", "path": TARGET_PATH}
+
+    await middleware(scope, receive, send)
+
+    assert len(sent_messages) == 2
+    assert sent_messages[0]["status"] == 413
+
+
+@pytest.mark.asyncio
+async def test_exception_group_mixed_ordinary_exception():
+    """Verify that a mixed group with a payload-limit and an ordinary exception is re-raised."""
+
+    async def app_raises(scope, receive, send):
+        raise BaseExceptionGroup(
+            "group", [PayloadTooLargeException(), ValueError("unrelated")]
+        )
+
+    middleware = RequestBodyLimitMiddleware(
+        app_raises, max_size=MAX_SIZE, target_paths=[TARGET_PATH]
+    )
+    receive = make_receive([])
+    sent_messages = []
+
+    async def send(message):
+        sent_messages.append(message)
+
+    scope = {"type": "http", "method": "POST", "path": TARGET_PATH}
+
+    with pytest.raises(BaseExceptionGroup) as exc_info:
+        await middleware(scope, receive, send)
+
+    assert len(sent_messages) == 0
+    assert len(exc_info.value.exceptions) == 2
+
+
+@pytest.mark.asyncio
+async def test_exception_group_mixed_cancelled_error():
+    """Verify that a mixed group with cancelled error is re-raised unchanged."""
+
+    async def app_raises(scope, receive, send):
+        raise BaseExceptionGroup(
+            "group", [PayloadTooLargeException(), asyncio.CancelledError()]
+        )
+
+    middleware = RequestBodyLimitMiddleware(
+        app_raises, max_size=MAX_SIZE, target_paths=[TARGET_PATH]
+    )
+    receive = make_receive([])
+    sent_messages = []
+
+    async def send(message):
+        sent_messages.append(message)
+
+    scope = {"type": "http", "method": "POST", "path": TARGET_PATH}
+
+    with pytest.raises(BaseExceptionGroup) as exc_info:
+        await middleware(scope, receive, send)
+
+    assert len(sent_messages) == 0
+    assert len(exc_info.value.exceptions) == 2
+
+
+@pytest.mark.asyncio
+async def test_exception_group_nested_mixed():
+    """Verify that nested groups are classified recursively."""
+
+    async def app_raises(scope, receive, send):
+        nested = BaseExceptionGroup(
+            "nested", [PayloadTooLargeException(), KeyError("mixed")]
+        )
+        raise BaseExceptionGroup("group", [PayloadTooLargeException(), nested])
+
+    middleware = RequestBodyLimitMiddleware(
+        app_raises, max_size=MAX_SIZE, target_paths=[TARGET_PATH]
+    )
+    receive = make_receive([])
+    sent_messages = []
+
+    async def send(message):
+        sent_messages.append(message)
+
+    scope = {"type": "http", "method": "POST", "path": TARGET_PATH}
+
+    with pytest.raises(BaseExceptionGroup):
+        await middleware(scope, receive, send)
+
+    assert len(sent_messages) == 0

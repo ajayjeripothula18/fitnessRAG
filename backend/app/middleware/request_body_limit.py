@@ -6,7 +6,7 @@ from typing import List
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
-class PayloadTooLargeException(Exception):
+class PayloadTooLargeException(BaseException):
     """Exception raised when request body exceeds the size limit."""
 
     pass
@@ -123,27 +123,44 @@ class RequestBodyLimitMiddleware:
         try:
             # Pass control to the application with our wrapped functions
             await self.app(scope, wrapped_receive, send_wrapper)
-        except PayloadTooLargeException:
-            # Handle the payload too large exception
-            if not response_started:
-                # If response hasn't started yet, we can send a 413 response
-                await send(
-                    {
-                        "type": "http.response.start",
-                        "status": 413,
-                        "headers": [
-                            [b"content-type", b"text/plain"],
-                        ],
-                    }
-                )
-                await send(
-                    {
-                        "type": "http.response.body",
-                        "body": b"Payload too large",
-                    }
-                )
-                return
-            # If response has already started, we cannot send another response start.
-            # Re-raise so the server or caller can handle the connection failure
-            # without violating ASGI protocol by sending duplicate response headers.
-            raise
+        except BaseException as exc:
+
+            def is_only_payload_too_large(e: BaseException) -> bool:
+                """
+                Returns True only when the exception is a PayloadTooLargeException
+                or a non-empty BaseExceptionGroup whose every nested member
+                recursively satisfies that condition.
+                """
+                if isinstance(e, PayloadTooLargeException):
+                    return True
+                if isinstance(e, BaseExceptionGroup):
+                    if not e.exceptions:
+                        return False
+                    return all(is_only_payload_too_large(sub) for sub in e.exceptions)
+                return False
+
+            if is_only_payload_too_large(exc):
+                # Handle the payload too large exception
+                if not response_started:
+                    # If response hasn't started yet, we can send a 413 response
+                    await send(
+                        {
+                            "type": "http.response.start",
+                            "status": 413,
+                            "headers": [
+                                [b"content-type", b"text/plain"],
+                            ],
+                        }
+                    )
+                    await send(
+                        {
+                            "type": "http.response.body",
+                            "body": b"Payload too large",
+                        }
+                    )
+                    return
+                # If response has already started, we cannot send another response start.
+                # Re-raise so the server or caller can handle the connection failure
+                # without violating ASGI protocol by sending duplicate response headers.
+                raise
+            raise exc
