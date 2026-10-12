@@ -38,6 +38,10 @@ def upgrade() -> None:
     op.execute(
         """
         DROP TRIGGER IF EXISTS document_chunks_content_tsv_trigger ON document_chunks;
+        """
+    )
+    op.execute(
+        """
         CREATE TRIGGER document_chunks_content_tsv_trigger
             BEFORE INSERT OR UPDATE OF content
             ON document_chunks

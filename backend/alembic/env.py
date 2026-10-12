@@ -18,6 +18,7 @@ from app.models import (
     conversation,
     message,
     document_chunk,
+    workout_plan,
 )  # noqa: F401
 from app.core.config import settings
 
