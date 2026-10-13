@@ -19,6 +19,7 @@ from app.models.profile import Profile  # noqa
 from app.models.conversation import Conversation  # noqa
 from app.models.message import Message  # noqa
 from app.models.document_chunk import DocumentChunk  # noqa
+from app.models.workout_plan import WorkoutPlan, PlanDay, PlanExercise  # noqa
 
 import os
 
