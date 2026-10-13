@@ -13,6 +13,7 @@ async def test_create_workout_plan(db_session):
     """Test creating a workout plan."""
     # First we need a user; we can create a minimal user for testing.
     from app.models.user import User
+
     user = User(
         email="test@example.com",
         hashed_password="hashedpassword",
@@ -50,7 +51,9 @@ async def test_create_workout_plan(db_session):
     assert workout_plan.updated_at is not None
 
     # Test relationship - verify user relationship via query (avoid MissingGreenlet in async)
-    result = await db_session.execute(select(User).where(User.id == workout_plan.user_id))
+    result = await db_session.execute(
+        select(User).where(User.id == workout_plan.user_id)
+    )
     user_related = result.scalar_one_or_none()
     assert user_related is not None
     assert user_related.id == user.id
@@ -62,7 +65,9 @@ async def test_create_workout_plan(db_session):
     assert workout_plan.user.email == "test@example.com"
 
     # Verify plan_days relationship via query (avoid MissingGreenlet in async)
-    result = await db_session.execute(select(PlanDay).where(PlanDay.workout_plan_id == workout_plan.id))
+    result = await db_session.execute(
+        select(PlanDay).where(PlanDay.workout_plan_id == workout_plan.id)
+    )
     plan_days_related = result.scalars().all()
     assert len(plan_days_related) == 0
 
@@ -81,6 +86,7 @@ async def test_create_workout_plan(db_session):
 async def test_workout_plan_unique_constraint(db_session):
     """Test unique constraint on (plan_identifier, version)."""
     from app.models.user import User
+
     user = User(
         email="test2@example.com",
         hashed_password="hashedpassword",
@@ -116,6 +122,7 @@ async def test_workout_plan_unique_constraint(db_session):
 async def test_workout_plan_version_positive(db_session):
     """Test check constraint for positive version."""
     from app.models.user import User
+
     user = User(
         email="test3@example.com",
         hashed_password="hashedpassword",
@@ -142,6 +149,7 @@ async def test_workout_plan_version_positive(db_session):
 async def test_plan_day_relationships(db_session):
     """Test PlanDay relationships and constraints."""
     from app.models.user import User
+
     user = User(
         email="test4@example.com",
         hashed_password="hashedpassword",
@@ -190,7 +198,9 @@ async def test_plan_day_relationships(db_session):
     assert day1.name == "Day 1"
     assert day1.order_idx == 0
     # Verify workout_plan relationship via query (avoid MissingGreenlet in async)
-    result = await db_session.execute(select(WorkoutPlan).where(WorkoutPlan.id == day1.workout_plan.id))
+    result = await db_session.execute(
+        select(WorkoutPlan).where(WorkoutPlan.id == day1.workout_plan.id)
+    )
     workout_plan_1 = result.scalar_one_or_none()
     assert workout_plan_1 is not None
     assert workout_plan_1.id == wp.id
@@ -211,7 +221,9 @@ async def test_plan_day_relationships(db_session):
     assert day2.name == "Day 2"
     assert day2.order_idx == 1
     # Verify workout_plan relationship via query (avoid MissingGreenlet in async)
-    result = await db_session.execute(select(WorkoutPlan).where(WorkoutPlan.id == day2.workout_plan.id))
+    result = await db_session.execute(
+        select(WorkoutPlan).where(WorkoutPlan.id == day2.workout_plan.id)
+    )
     workout_plan_2 = result.scalar_one_or_none()
     assert workout_plan_2 is not None
     assert workout_plan_2.id == wp.id
@@ -233,7 +245,9 @@ async def test_plan_day_relationships(db_session):
     assert day_numbers == {1, 2}
 
     # Test loading WorkoutPlan through explicit select() to verify lazy="selectin" works
-    result = await db_session.execute(select(WorkoutPlan).where(WorkoutPlan.id == wp.id))
+    result = await db_session.execute(
+        select(WorkoutPlan).where(WorkoutPlan.id == wp.id)
+    )
     wp_from_db = result.scalar_one_or_none()
     assert wp_from_db is not None
     assert wp_from_db.id == wp.id
@@ -271,6 +285,7 @@ async def test_plan_day_relationships(db_session):
 async def test_plan_exercise_relationships(db_session):
     """Test PlanExercise relationships and constraints."""
     from app.models.user import User
+
     user = User(
         email="test5@example.com",
         hashed_password="hashedpassword",
@@ -337,7 +352,9 @@ async def test_plan_exercise_relationships(db_session):
     assert ex1.order_idx == 0
     assert ex1.notes == "Standard push up"
     # Verify plan_day relationship via query (avoid MissingGreenlet in async)
-    result = await db_session.execute(select(PlanDay).where(PlanDay.id == ex1.plan_day.id))
+    result = await db_session.execute(
+        select(PlanDay).where(PlanDay.id == ex1.plan_day.id)
+    )
     plan_day_1 = result.scalar_one_or_none()
     assert plan_day_1 is not None
     assert plan_day_1.id == day.id
@@ -358,7 +375,9 @@ async def test_plan_exercise_relationships(db_session):
     assert ex2.order_idx == 1
     assert ex2.notes == "Back squat"
     # Verify plan_day relationship via query (avoid MissingGreenlet in async)
-    result = await db_session.execute(select(PlanDay).where(PlanDay.id == ex2.plan_day.id))
+    result = await db_session.execute(
+        select(PlanDay).where(PlanDay.id == ex2.plan_day.id)
+    )
     plan_day_2 = result.scalar_one_or_none()
     assert plan_day_2 is not None
     assert plan_day_2.id == day.id
@@ -430,6 +449,7 @@ async def test_plan_exercise_relationships(db_session):
 async def test_cascade_delete(db_session):
     """Test that deleting a workout plan cascades to days and exercises."""
     from app.models.user import User
+
     user = User(
         email="test6@example.com",
         hashed_password="hashedpassword",
@@ -483,11 +503,14 @@ async def test_cascade_delete(db_session):
 
     # Now query to ensure day and exercise are deleted
     from sqlalchemy import select
+
     result = await db_session.execute(select(PlanDay).where(PlanDay.id == day.id))
     day_deleted = result.scalar_one_or_none()
     assert day_deleted is None
 
-    result = await db_session.execute(select(PlanExercise).where(PlanExercise.id == ex.id))
+    result = await db_session.execute(
+        select(PlanExercise).where(PlanExercise.id == ex.id)
+    )
     ex_deleted = result.scalar_one_or_none()
     assert ex_deleted is None
 
@@ -496,6 +519,7 @@ async def test_cascade_delete(db_session):
 async def test_user_deletion_cascade(db_session):
     """Test that deleting a user cascades to workout plans."""
     from app.models.user import User
+
     user = User(
         email="test7@example.com",
         hashed_password="hashedpassword",
@@ -527,7 +551,9 @@ async def test_user_deletion_cascade(db_session):
     assert user_after is None
 
     # Verify workout plan is deleted due to cascade
-    result = await db_session.execute(select(WorkoutPlan).where(WorkoutPlan.id == wp.id))
+    result = await db_session.execute(
+        select(WorkoutPlan).where(WorkoutPlan.id == wp.id)
+    )
     wp_after = result.scalar_one_or_none()
     assert wp_after is None
 
@@ -536,6 +562,7 @@ async def test_user_deletion_cascade(db_session):
 async def test_partial_unique_index_active_versions(db_session):
     """Test PostgreSQL partial unique index for active plan versions."""
     from app.models.user import User
+
     user = User(
         email="test8@example.com",
         hashed_password="hashedpassword",

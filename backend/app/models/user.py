@@ -19,7 +19,10 @@ class User(BaseModel):
         "Conversation", back_populates="user", cascade="all, delete-orphan"
     )
     workout_plans = relationship(
-        "WorkoutPlan", back_populates="user", cascade="all, delete-orphan", lazy="selectin"
+        "WorkoutPlan",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
     __table_args__ = (UniqueConstraint("email", name="uq_email"),)
