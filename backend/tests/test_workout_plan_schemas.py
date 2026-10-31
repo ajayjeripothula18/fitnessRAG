@@ -166,7 +166,9 @@ class TestPlanExerciseCreate:
                 target_reps="10",
                 rest_seconds=601,
             )
-        assert "less than or equal to 600" in str(exc_info.value) or "le=600" in str(exc_info.value)
+        assert "less than or equal to 600" in str(exc_info.value) or "le=600" in str(
+            exc_info.value
+        )
 
     def test_invalid_rest_seconds_negative(self):
         """rest_seconds rejects -1."""
@@ -177,7 +179,9 @@ class TestPlanExerciseCreate:
                 target_reps="10",
                 rest_seconds=-1,
             )
-        assert "greater than or equal to 0" in str(exc_info.value) or "ge=0" in str(exc_info.value)
+        assert "greater than or equal to 0" in str(exc_info.value) or "ge=0" in str(
+            exc_info.value
+        )
 
     def test_valid_target_weight_kg_zero(self):
         """target_weight_kg accepts 0.0."""
@@ -203,45 +207,47 @@ class TestPlanExerciseCreate:
         """target_weight_kg rejects negative values."""
         with pytest.raises(ValidationError) as exc_info:
             PlanExerciseCreate(
-                exercise_name='Push Up',
+                exercise_name="Push Up",
                 target_sets=3,
-                target_reps='10',
+                target_reps="10",
                 target_weight_kg=-5.0,
             )
-        assert 'greater than or equal to 0' in str(exc_info.value) or 'ge=0' in str(exc_info.value)
+        assert "greater than or equal to 0" in str(exc_info.value) or "ge=0" in str(
+            exc_info.value
+        )
 
     def test_invalid_target_weight_kg_nan(self):
         """target_weight_kg rejects NaN (caught by ge=0 validator)."""
         with pytest.raises(ValidationError) as exc_info:
             PlanExerciseCreate(
-                exercise_name='Push Up',
+                exercise_name="Push Up",
                 target_sets=3,
-                target_reps='10',
-                target_weight_kg=float('nan'),
+                target_reps="10",
+                target_weight_kg=float("nan"),
             )
-        assert 'greater than or equal to 0' in str(exc_info.value)
+        assert "greater than or equal to 0" in str(exc_info.value)
 
     def test_invalid_target_weight_kg_inf(self):
         """target_weight_kg rejects infinity (passes ge=0 but caught by custom validator)."""
         with pytest.raises(ValidationError) as exc_info:
             PlanExerciseCreate(
-                exercise_name='Push Up',
+                exercise_name="Push Up",
                 target_sets=3,
-                target_reps='10',
-                target_weight_kg=float('inf'),
+                target_reps="10",
+                target_weight_kg=float("inf"),
             )
-        assert 'finite' in str(exc_info.value).lower()
+        assert "finite" in str(exc_info.value).lower()
 
     def test_invalid_target_weight_kg_negative_inf(self):
         """target_weight_kg rejects negative infinity (caught by ge=0 validator)."""
         with pytest.raises(ValidationError) as exc_info:
             PlanExerciseCreate(
-                exercise_name='Push Up',
+                exercise_name="Push Up",
                 target_sets=3,
-                target_reps='10',
-                target_weight_kg=float('-inf'),
+                target_reps="10",
+                target_weight_kg=float("-inf"),
             )
-        assert 'greater than or equal to 0' in str(exc_info.value)
+        assert "greater than or equal to 0" in str(exc_info.value)
 
 
 class TestPlanDayCreate:
@@ -339,7 +345,9 @@ class TestWorkoutPlanCreate:
                 name="Test Plan",
                 days=[],
             )
-        assert "at least 1" in str(exc_info.value) or "min_length" in str(exc_info.value)
+        assert "at least 1" in str(exc_info.value) or "min_length" in str(
+            exc_info.value
+        )
 
     def test_invalid_duplicate_day_numbers(self):
         """WorkoutPlanCreate raises ValidationError for duplicate day_number."""
@@ -525,7 +533,9 @@ class TestEdgeCases:
                 target_sets=3,
                 target_reps="10",
             )
-        assert "at most 255" in str(exc_info.value) or "String should have at most 255" in str(exc_info.value)
+        assert "at most 255" in str(
+            exc_info.value
+        ) or "String should have at most 255" in str(exc_info.value)
 
     def test_day_name_max_length(self):
         """PlanDayCreate name accepts max 100 characters."""
@@ -597,6 +607,7 @@ class TestRegressionFixes:
     def test_workout_plan_response_datetime_serialization(self):
         """WorkoutPlanResponse serializes datetime fields to ISO format in JSON."""
         from datetime import datetime
+
         now = datetime.now()
 
         plan = WorkoutPlanResponse(
@@ -623,6 +634,7 @@ class TestRegressionFixes:
     def test_workout_plan_version_response_datetime_serialization(self):
         """WorkoutPlanVersionResponse serializes datetime field to ISO format in JSON."""
         from datetime import datetime
+
         now = datetime.now()
 
         version = WorkoutPlanVersionResponse(
@@ -641,6 +653,7 @@ class TestRegressionFixes:
     def test_validation_alias_plan_days_to_days(self):
         """validation_alias maps plan_days (DB model) to days (response schema)."""
         from datetime import datetime
+
         now = datetime.now()
 
         # Create a mock object with plan_days attribute (as DB model would have)
@@ -663,7 +676,9 @@ class TestRegressionFixes:
                 self.order_idx = 0
                 self.description = None
                 self.focus = None
-                self.plan_exercises = [MockPlanExercise()]  # DB model uses plan_exercises
+                self.plan_exercises = [
+                    MockPlanExercise()
+                ]  # DB model uses plan_exercises
 
         class MockWorkoutPlan:
             def __init__(self):
@@ -691,6 +706,7 @@ class TestRegressionFixes:
     def test_validation_alias_plan_exercises_to_exercises(self):
         """validation_alias maps plan_exercises (DB model) to exercises (response schema)."""
         from datetime import datetime
+
         now = datetime.now()
 
         # Create a mock object with plan_exercises attribute (as DB model would have)
@@ -713,7 +729,9 @@ class TestRegressionFixes:
                 self.order_idx = 0
                 self.description = None
                 self.focus = "Lower Body"
-                self.plan_exercises = [MockPlanExercise()]  # DB model uses plan_exercises
+                self.plan_exercises = [
+                    MockPlanExercise()
+                ]  # DB model uses plan_exercises
 
         # This should work with validation_alias mapping plan_exercises -> exercises
         mock_day = MockPlanDay()

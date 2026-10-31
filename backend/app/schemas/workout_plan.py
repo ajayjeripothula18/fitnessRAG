@@ -72,14 +72,18 @@ class PlanExerciseBase(BaseModel):
 
         # Reject time formats (e.g., "30s", "45sec")
         if re.match(r"^\d+\s*(s|sec|min|m)$", v, re.IGNORECASE):
-            raise ValueError("Time-based formats (e.g., '30s') are not allowed; use rep counts or ranges")
+            raise ValueError(
+                "Time-based formats (e.g., '30s') are not allowed; use rep counts or ranges"
+            )
 
         # Reject text without numbers
         if not re.search(r"\d", v):
             raise ValueError("Repetition string must contain numeric values or 'AMRAP'")
 
         # If we get here, it's an invalid format
-        raise ValueError("Invalid format; expected positive integer, range (e.g., '8-10'), or 'AMRAP'")
+        raise ValueError(
+            "Invalid format; expected positive integer, range (e.g., '8-10'), or 'AMRAP'"
+        )
 
     @field_validator("target_weight_kg")
     @classmethod
@@ -139,7 +143,9 @@ class PlanDayResponse(PlanDayBase):
 
     id: int
     order_idx: int
-    exercises: List[PlanExerciseResponse] = Field(default_factory=list, validation_alias="plan_exercises")
+    exercises: List[PlanExerciseResponse] = Field(
+        default_factory=list, validation_alias="plan_exercises"
+    )
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -175,7 +181,9 @@ class WorkoutPlanResponse(BaseModel):
     change_reason: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-    days: List[PlanDayResponse] = Field(default_factory=list, validation_alias="plan_days")
+    days: List[PlanDayResponse] = Field(
+        default_factory=list, validation_alias="plan_days"
+    )
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
