@@ -589,3 +589,137 @@ class TestEdgeCases:
                 target_reps=variant,
             )
             assert exercise.target_reps == variant
+
+
+class TestRegressionFixes:
+    """Regression tests for Greptile findings fixes."""
+
+    def test_workout_plan_response_datetime_serialization(self):
+        """WorkoutPlanResponse serializes datetime fields to ISO format in JSON."""
+        from datetime import datetime
+        now = datetime.now()
+
+        plan = WorkoutPlanResponse(
+            id=1,
+            plan_identifier="test-123",
+            version=1,
+            is_active=True,
+            name="Test Plan",
+            created_at=now,
+            updated_at=now,
+            days=[],
+        )
+        # Verify datetime fields are stored as datetime objects
+        assert isinstance(plan.created_at, datetime)
+        assert isinstance(plan.updated_at, datetime)
+        # Verify JSON serialization produces ISO format strings
+        json_data = plan.model_dump(mode="json")
+        assert isinstance(json_data["created_at"], str)
+        assert isinstance(json_data["updated_at"], str)
+        # Verify the format is ISO-like (contains T separator)
+        assert "T" in json_data["created_at"]
+        assert "T" in json_data["updated_at"]
+
+    def test_workout_plan_version_response_datetime_serialization(self):
+        """WorkoutPlanVersionResponse serializes datetime field to ISO format in JSON."""
+        from datetime import datetime
+        now = datetime.now()
+
+        version = WorkoutPlanVersionResponse(
+            version=1,
+            is_active=True,
+            created_at=now,
+            change_reason="Initial",
+        )
+        # Verify datetime field is stored as datetime object
+        assert isinstance(version.created_at, datetime)
+        # Verify JSON serialization produces ISO format string
+        json_data = version.model_dump(mode="json")
+        assert isinstance(json_data["created_at"], str)
+        assert "T" in json_data["created_at"]
+
+    def test_validation_alias_plan_days_to_days(self):
+        """validation_alias maps plan_days (DB model) to days (response schema)."""
+        from datetime import datetime
+        now = datetime.now()
+
+        # Create a mock object with plan_days attribute (as DB model would have)
+        class MockPlanExercise:
+            def __init__(self):
+                self.id = 1
+                self.exercise_name = "Push Up"
+                self.target_sets = 3
+                self.target_reps = "10"
+                self.rest_seconds = 60
+                self.target_weight_kg = 0.0
+                self.order_idx = 0
+                self.notes = "test"
+
+        class MockPlanDay:
+            def __init__(self):
+                self.id = 1
+                self.day_number = 1
+                self.name = "Day 1"
+                self.order_idx = 0
+                self.description = None
+                self.focus = None
+                self.plan_exercises = [MockPlanExercise()]  # DB model uses plan_exercises
+
+        class MockWorkoutPlan:
+            def __init__(self):
+                self.id = 1
+                self.plan_identifier = "test-123"
+                self.version = 1
+                self.is_active = True
+                self.name = "Test Plan"
+                self.description = None
+                self.goal = None
+                self.change_reason = None
+                self.created_at = now
+                self.updated_at = now
+                self.plan_days = [MockPlanDay()]  # DB model uses plan_days
+
+        # This should work with validation_alias mapping plan_days -> days
+        mock_plan = MockWorkoutPlan()
+        plan = WorkoutPlanResponse.model_validate(mock_plan)
+
+        assert len(plan.days) == 1
+        assert plan.days[0].name == "Day 1"
+        assert len(plan.days[0].exercises) == 1
+        assert plan.days[0].exercises[0].exercise_name == "Push Up"
+
+    def test_validation_alias_plan_exercises_to_exercises(self):
+        """validation_alias maps plan_exercises (DB model) to exercises (response schema)."""
+        from datetime import datetime
+        now = datetime.now()
+
+        # Create a mock object with plan_exercises attribute (as DB model would have)
+        class MockPlanExercise:
+            def __init__(self):
+                self.id = 1
+                self.exercise_name = "Squat"
+                self.target_sets = 4
+                self.target_reps = "8-12"
+                self.rest_seconds = 90
+                self.target_weight_kg = 60.0
+                self.order_idx = 0
+                self.notes = "Back squat"
+
+        class MockPlanDay:
+            def __init__(self):
+                self.id = 1
+                self.day_number = 1
+                self.name = "Leg Day"
+                self.order_idx = 0
+                self.description = None
+                self.focus = "Lower Body"
+                self.plan_exercises = [MockPlanExercise()]  # DB model uses plan_exercises
+
+        # This should work with validation_alias mapping plan_exercises -> exercises
+        mock_day = MockPlanDay()
+        day = PlanDayResponse.model_validate(mock_day)
+
+        assert len(day.exercises) == 1
+        assert day.exercises[0].exercise_name == "Squat"
+        assert day.exercises[0].target_sets == 4
+        assert day.exercises[0].target_reps == "8-12"
