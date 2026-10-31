@@ -71,8 +71,8 @@ async def _ensure_test_database_exists_async(url):
             await conn.execute(f'CREATE DATABASE "{db_name}"')
         await conn.close()
     except Exception:
-        # If we cannot connect, let the original error surface later
-        pass
+        # Re-raise to surface database setup errors instead of silently failing
+        raise
 
 
 # Lazy database initialization - only create engine when needed

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import math
 import re
+from datetime import datetime
 from typing import Optional, List
 
 from pydantic import (
@@ -138,9 +139,9 @@ class PlanDayResponse(PlanDayBase):
 
     id: int
     order_idx: int
-    exercises: List[PlanExerciseResponse] = Field(default_factory=list)
+    exercises: List[PlanExerciseResponse] = Field(default_factory=list, validation_alias="plan_exercises")
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class WorkoutPlanCreate(BaseModel):
@@ -172,11 +173,11 @@ class WorkoutPlanResponse(BaseModel):
     description: Optional[str] = None
     goal: Optional[str] = None
     change_reason: Optional[str] = None
-    created_at: str  # ISO format datetime string
-    updated_at: str  # ISO format datetime string
-    days: List[PlanDayResponse] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+    days: List[PlanDayResponse] = Field(default_factory=list, validation_alias="plan_days")
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class PlansListResponse(BaseModel):
@@ -194,7 +195,7 @@ class WorkoutPlanVersionResponse(BaseModel):
 
     version: int
     is_active: bool
-    created_at: str
+    created_at: datetime
     change_reason: Optional[str] = None
 
 
