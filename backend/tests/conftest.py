@@ -47,8 +47,8 @@ def _get_test_database_url():
     return url
 
 
-def _ensure_test_database_exists(url):
-    """Create the test database if it does not exist."""
+async def _ensure_test_database_exists_async(url):
+    """Create the test database if it does not exist (async version)."""
     parsed = urlparse(url.replace("+asyncpg", ""))  # strip driver for parsing
     db_name = parsed.path.lstrip("/")
     user = parsed.username
@@ -56,43 +56,51 @@ def _ensure_test_database_exists(url):
     host = parsed.hostname
     port = parsed.port or 5432
 
-    async def _create_if_missing():
-        try:
-            conn = await asyncpg.connect(
-                user=user,
-                password=password,
-                database="postgres",
-                host=host,
-                port=port,
-            )
-            exists = await conn.fetchval(
-                "SELECT 1 FROM pg_database WHERE datname = $1", db_name
-            )
-            if not exists:
-                await conn.execute(f'CREATE DATABASE "{db_name}"')
-            await conn.close()
-        except Exception as e:
-            # If we cannot connect, let the original error surface later
-            raise
-
-    asyncio.run(_create_if_missing())
+    try:
+        conn = await asyncpg.connect(
+            user=user,
+            password=password,
+            database="postgres",
+            host=host,
+            port=port,
+        )
+        exists = await conn.fetchval(
+            "SELECT 1 FROM pg_database WHERE datname = $1", db_name
+        )
+        if not exists:
+            await conn.execute(f'CREATE DATABASE "{db_name}"')
+        await conn.close()
+    except Exception:
+        # If we cannot connect, let the original error surface later
+        pass
 
 
-TEST_DATABASE_URL = _get_test_database_url()
-_ensure_test_database_exists(TEST_DATABASE_URL)
+# Lazy database initialization - only create engine when needed
+# This allows pure unit tests (like schema validation tests) to run without a database
+_test_engine = None
+_TestingSessionLocal = None
 
-from sqlalchemy.pool import NullPool
 
-test_engine = create_async_engine(
-    TEST_DATABASE_URL,
-    poolclass=NullPool,
-)
+async def _get_test_engine_async():
+    """Get or create the test database engine lazily (async version)."""
+    global _test_engine, _TestingSessionLocal
+    if _test_engine is None:
+        TEST_DATABASE_URL = _get_test_database_url()
+        await _ensure_test_database_exists_async(TEST_DATABASE_URL)
 
-TestingSessionLocal = async_sessionmaker(
-    test_engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-)
+        from sqlalchemy.pool import NullPool
+
+        _test_engine = create_async_engine(
+            TEST_DATABASE_URL,
+            poolclass=NullPool,
+        )
+
+        _TestingSessionLocal = async_sessionmaker(
+            _test_engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )
+    return _test_engine, _TestingSessionLocal
 
 
 import asyncio
@@ -105,8 +113,10 @@ def event_loop():
     loop.close()
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session")
 async def setup_test_db():
+    """Setup test database - runs when database fixtures are actually used."""
+    test_engine, _ = await _get_test_engine_async()
     async with test_engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.drop_all)
@@ -151,7 +161,8 @@ async def setup_test_db():
 
 
 @pytest_asyncio.fixture
-async def db_session() -> AsyncGenerator[AsyncSession, None]:
+async def db_session(setup_test_db) -> AsyncGenerator[AsyncSession, None]:
+    _, TestingSessionLocal = await _get_test_engine_async()
     async with TestingSessionLocal() as session:
         yield session
 
