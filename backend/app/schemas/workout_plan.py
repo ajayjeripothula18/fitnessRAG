@@ -8,7 +8,7 @@ from __future__ import annotations
 import math
 import re
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Sequence
 
 from pydantic import (
     BaseModel,
@@ -129,7 +129,7 @@ class PlanDayBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = None
     focus: Optional[str] = Field(default=None, max_length=200)
-    exercises: List[PlanExerciseCreate] = Field(default_factory=list)
+    exercises: Sequence[PlanExerciseBase] = Field(default_factory=list)
 
 
 class PlanDayCreate(PlanDayBase):
